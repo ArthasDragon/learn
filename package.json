@@ -15,5 +15,8 @@
     "url": "https://github.com/ywl1641627793/learnNode/issues"
   },
   "homepage": "https://github.com/ywl1641627793/learnNode#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "is-sorted": "^1.0.4"
+  }
 }
