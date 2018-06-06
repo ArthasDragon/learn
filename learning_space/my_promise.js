@@ -1,5 +1,6 @@
 function Promise(fn) {
   var self = this
+  this.tasks
   this._status = 'pending' //fulfilled   rejected
   this._resolves = []
   this._rejects = []
@@ -12,8 +13,16 @@ function Promise(fn) {
       value = fn(value)
     }
     self._value = value
+    self._resolves = []
   }
-  function reject(reason) {}
+  function reject(reason) {
+    self._status = 'rejected'
+    while ((fn = self._rejects.shift())) {
+      reason = fn(reason)
+    }
+    self._reason = reason
+    self._rejects = []
+  }
   setTimeout(function() {
     fn(resolve, reject)
   }, 0)
@@ -54,46 +63,121 @@ Promise.prototype.then = function(onFulfilled, onRejected) {
   })
 }
 
-function runAsync1() {
-  var p = new Promise(function(resolve, reject) {
-    //做一些异步操作
-    setTimeout(function() {
-      console.log('异步任务1执行完成')
-      resolve('随便什么数据1')
-    }, 1000)
-  })
-  return p
-}
-function runAsync2() {
-  var p = new Promise(function(resolve, reject) {
-    //做一些异步操作
-    setTimeout(function() {
-      console.log('异步任务2执行完成')
-      resolve('随便什么数据2')
-    }, 2000)
-  })
-  return p
-}
-function runAsync3() {
-  var p = new Promise(function(resolve, reject) {
-    //做一些异步操作
-    setTimeout(function() {
-      console.log('异步任务3执行完成')
-      resolve('随便什么数据3')
-    }, 2000)
-  })
-  return p
+Promise.prototype.catch = function(errback) {
+  this._rejects.push(errback)
 }
 
-runAsync1()
-  .then(function(data) {
-    console.log(data)
-    return runAsync2()
+Promise.all = function(args) {
+  if (!Array.isArray(args)) {
+    return console.error(`the all args should be array but find ${typeof args}`)
+  }
+  return new Promise(function(resolve, reject) {
+    var promises = args
+    var len = promises.length
+    var num = promises.length
+    var results = new Array(len)
+    for (var i = 0; i < len; ++i) {
+      ;(function(i) {
+        var cur_promise = promises[i]
+        if (cur_promise instanceof Promise) {
+          cur_promise.then(
+            function(val) {
+              results[i] = val
+              --num === 0 && resolve(results)
+            },
+            function(reas) {
+              reject(reas)
+            }
+          )
+        } else {
+          results[i] = cur_promise
+          --num === 0 && resolve(results)
+        }
+      })(i)
+    }
   })
-  .then(function(data) {
-    console.log(data)
-    return '直接返回数据' //这里直接返回数据
+}
+
+p1()
+  .then(p2)
+  .then(p3, function(val) {
+    console.log(val)
+    return val
   })
-  .then(function(data) {
-    console.log(data)
+  .then(
+    function(data) {
+      console.log('data: ' + data)
+    },
+    function(val) {
+      console.log(val)
+    }
+  )
+
+function p1() {
+  return new Promise(function(resolve, reject) {
+    console.log('p1 resolved')
+    resolve(123)
   })
+}
+
+function p2() {
+  return new Promise(function(resolve, reject) {
+    console.log('p2 rejected')
+    reject(456)
+  })
+}
+
+function p3() {
+  return new Promise(function(resolve, reject) {
+    console.log('p3 resolved')
+    resolve(789)
+  })
+}
+
+// function runAsync1() {
+//   var p = new Promise(function(resolve, reject) {
+//     //做一些异步操作
+//     setTimeout(function() {
+//       console.log('异步任务1执行完成')
+//       resolve('随便什么数据1')
+//     }, 1000)
+//   })
+//   return p
+// }
+// function runAsync2() {
+//   var p = new Promise(function(resolve, reject) {
+//     //做一些异步操作
+//     setTimeout(function() {
+//       console.log('异步任务2执行完成')
+//       resolve('随便什么数据2')
+//     }, 2000)
+//   })
+//   return p
+// }
+// function runAsync3() {
+//   var p = new Promise(function(resolve, reject) {
+//     //做一些异步操作
+//     setTimeout(function() {
+//       console.log('异步任务3执行完成')
+//       resolve('随便什么数据3')
+//     }, 2000)
+//   })
+//   return p
+// }
+
+// Promise.all([runAsync1(), 2, 3, 4]).then(function(val) {
+//   console.log(val)
+// })
+
+// runAsync1()
+//   .then(function(data) {
+//     console.log(data)
+//     return runAsync2()
+//   })
+//   .then(function(data) {
+//     console.log(data)
+//     return '直接返回数据' //这里直接返回数据
+//   })
+//   .then(function(data) {
+//     console.log(data)
+//   })

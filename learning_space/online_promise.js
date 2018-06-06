@@ -253,3 +253,39 @@ function consoleLogId(id) {
 }
 
 promise_forEach_then()
+
+p1()
+  .then(p2)
+  .then(p3, function(val) {
+    console.log(val)
+    return val
+  })
+  .then(
+    function(data) {
+      console.log('data: ' + data)
+    },
+    function(val) {
+      console.log(val)
+    }
+  )
+
+function p1() {
+  return new Promise(function(resolve, reject) {
+    console.log('p1 resolved')
+    resolve(123)
+  })
+}
+
+function p2() {
+  return new Promise(function(resolve, reject) {
+    console.log('p2 rejected')
+    reject(456)
+  })
+}
+
+function p3() {
+  return new Promise(function(resolve, reject) {
+    console.log('p3 resolved')
+    resolve(789)
+  })
+}
