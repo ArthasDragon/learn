@@ -6,6 +6,7 @@ function Promise(fn) {
   this._rejects = []
   this._value
   this._reason
+  this._catchback
 
   function resolve(value) {
     self._status = 'fulfilled'
@@ -16,6 +17,10 @@ function Promise(fn) {
     self._resolves = []
   }
   function reject(reason) {
+    if (Promise.prototype._catchback) {
+      Promise.prototype._catchback(reason)
+      return (Promise.prototype._catchback = null)
+    }
     self._status = 'rejected'
     while ((fn = self._rejects.shift())) {
       reason = fn(reason)
@@ -30,26 +35,28 @@ function Promise(fn) {
 
 Promise.prototype.then = function(onFulfilled, onRejected) {
   let self = this
+
+  function final(value, cb, resolve, reject) {
+    let result = typeof cb === 'function' ? cb(value) : value
+    if (result instanceof Promise) {
+      result.then(
+        function(value) {
+          resolve(value)
+        },
+        function(value) {
+          reject(value)
+        }
+      )
+    } else {
+      resolve(result)
+    }
+  }
   return new Promise(function(resolve, reject) {
     function handle(value) {
-      let result =
-        typeof onFulfilled === 'function' ? onFulfilled(value) : value
-      if (result instanceof Promise) {
-        result.then(
-          function(value) {
-            resolve(value)
-          },
-          function(value) {
-            reject(value)
-          }
-        )
-      } else {
-        resolve(result)
-      }
+      final(value, onFulfilled, resolve, reject)
     }
     function errback(reason) {
-      reason = typeof onRejected === 'function' ? onRejected(reason) : reason
-      reject(reason)
+      final(reason, onRejected, resolve, reject)
     }
 
     if (self._status === 'pending') {
@@ -64,14 +71,14 @@ Promise.prototype.then = function(onFulfilled, onRejected) {
 }
 
 Promise.prototype.catch = function(errback) {
-  this._rejects.push(errback)
+  Promise.prototype._catchback = errback
 }
 
 Promise.all = function(args) {
   if (!Array.isArray(args)) {
     return console.error(`the all args should be array but find ${typeof args}`)
   }
-  return new Promise(function(resolve, reject) {
+  return Promise(function(resolve, reject) {
     var promises = args
     var len = promises.length
     var num = promises.length
@@ -100,16 +107,16 @@ Promise.all = function(args) {
 
 p1()
   .then(p2)
-  .then(p3, function(val) {
-    console.log(val)
-    return val
+  .then(p3, function(data) {
+    console.log(data)
+    return data
   })
   .then(
     function(data) {
       console.log('data: ' + data)
     },
-    function(val) {
-      console.log(val)
+    function(data) {
+      console.log(data)
     }
   )
 
