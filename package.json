@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "gulp jsToEs5"
   },
   "repository": {
     "type": "git",
@@ -22,10 +23,23 @@
     "array-first": "^1.0.2",
     "array-last": "^1.3.0",
     "array-range": "^1.0.1",
+    "babel-core": "^6.26.3",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-plugin-transform-decorators-legacy": "^1.3.4",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
+    "babel-preset-es2015": "^6.24.1",
+    "babel-preset-react": "^6.24.1",
+    "babel-preset-stage-2": "^6.24.1",
+    "cross-env": "^5.1.6",
+    "css-loader": "^0.28.11",
     "dedupe": "^2.1.0",
-    "is-sorted": "^1.0.4"
-  },
-  "dependencies": {
-    "ywl_dragon123654789": "^1.0.0"
+    "gulp": "^3.9.1",
+    "gulp-babel": "^7.0.1",
+    "gulp-minify-css": "^1.2.4",
+    "gulp-postcss": "^7.0.1",
+    "is-sorted": "^1.0.4",
+    "postcss-loader": "^2.1.5"
   }
 }
