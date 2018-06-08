@@ -1,23 +1,19 @@
 {
-    "env": {
-        "node": true,
-        "commonjs": true,
-        "es6": true
+  "env": {
+    "node": true,
+    "commonjs": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaFeatures": {
+      "experimentalObjectRestSpread": true,
+      "jsx": true
     },
-    "parserOptions": {
-        "ecmaFeatures": {
-            "experimentalObjectRestSpread": true,
-            "jsx": true
-        },
-        "sourceType": "module"
-    },
-    "plugins": [
-        "react"
-    ],
-    "rules": {
-        "indent": [
-            "error",
-            "tab"
-        ]
-    }
+    "sourceType": "module"
+  },
+  "plugins": [],
+  "rules": {
+    "indent": ["error", "tab"],
+    "semi": 2
+  }
 }
