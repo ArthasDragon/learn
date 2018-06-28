@@ -1,108 +1,112 @@
 //怎么加入microtask   ?????
 
-// function Promise(fn) {
-//   var self = this
-//   this.tasks
-//   this._status = 'pending' //fulfilled   rejected
-//   this._resolves = []
-//   this._rejects = []
-//   this._value
-//   this._reason
+function Promise(fn) {
+	var self = this;
+	this.tasks;
+	this._status = "pending"; //fulfilled   rejected
+	this._resolves = [];
+	this._rejects = [];
+	this._value;
+	this._reason;
 
-//   function resolve(value) {
-//     self._status = 'fulfilled'
-//     while ((fn = self._resolves.shift())) {
-//       value = fn(value)
-//     }
-//     self._value = value
-//     self._resolves = []
-//   }
-//   function reject(reason) {
-//     if (Promise.prototype._catchback) {
-//       Promise.prototype._catchback(reason)
-//       return (Promise.prototype._catchback = null)
-//     }
-//     self._status = 'rejected'
-//     while ((fn = self._rejects.shift())) {
-//       reason = fn(reason)
-//     }
-//     self._reason = reason
-//     self._rejects = []
-//   }
-//   fn(resolve, reject)
-// }
+	function resolve(value) {
+		self._status = "fulfilled";
+		while ((fn = self._resolves.shift())) {
+			value = fn(value);
+		}
+		self._value = value;
+		self._resolves = [];
+	}
+	function reject(reason) {
+		if (Promise.prototype._catchback) {
+			Promise.prototype._catchback(reason);
+			return (Promise.prototype._catchback = null);
+		}
+		self._status = "rejected";
+		while ((fn = self._rejects.shift())) {
+			reason = fn(reason);
+		}
+		self._reason = reason;
+		self._rejects = [];
+	}
+	fn(resolve, reject);
+}
 
-// Promise.prototype.then = function(onFulfilled, onRejected) {
-//   let self = this
+Promise.prototype.then = function(onFulfilled, onRejected) {
+	let self = this;
 
-//   function final(value, cb, resolve, reject) {
-//     let result = typeof cb === 'function' ? cb(value) : value
-//     if (result instanceof Promise) {
-//       result.then(
-//         function(value) {
-//           resolve(value)
-//         },
-//         function(value) {
-//           reject(value)
-//         }
-//       )
-//     } else {
-//       resolve(result)
-//     }
-//   }
-//   return new Promise(function(resolve, reject) {
-//     function handle(value) {
-//       final(value, onFulfilled, resolve, reject)
-//     }
-//     function errback(reason) {
-//       final(reason, onRejected, resolve, reject)
-//     }
+	function final(value, cb, resolve, reject) {
+		let result = typeof cb === "function" ? cb(value) : value;
+		if (result instanceof Promise) {
+			result.then(
+				function(value) {
+					resolve(value);
+				},
+				function(value) {
+					reject(value);
+				}
+			);
+		} else {
+			resolve(result);
+		}
+	}
+	return new Promise(function(resolve, reject) {
+		function handle(value) {
+			final(value, onFulfilled, resolve, reject);
+		}
+		function errback(reason) {
+			final(reason, onRejected, resolve, reject);
+		}
 
-//     if (self._status === 'pending') {
-//       self._resolves.push(handle)
-//       self._rejects.push(errback)
-//     } else if (self._status === 'fulfilled') {
-//       handle(self._value)
-//     } else {
-//       errback(self._reason)
-//     }
-//   })
-// }
+		if (self._status === "pending") {
+			self._resolves.push(handle);
+			self._rejects.push(errback);
+		} else if (self._status === "fulfilled") {
+			handle(self._value);
+		} else {
+			errback(self._reason);
+		}
+	});
+};
 
-// Promise.prototype.catch = function(errback) {
-//   Promise.prototype._catchback = errback
-// }
+Promise.prototype.catch = function(errback) {
+	Promise.prototype._catchback = errback;
+};
 
-// Promise.all = function(args) {
-//   if (!Array.isArray(args)) {
-//     return console.error(`the all args should be array but find ${typeof args}`)
-//   }
-//   return Promise(function(resolve, reject) {
-//     var promises = args
-//     var len = promises.length
-//     var num = promises.length
-//     var results = new Array(len)
-//     for (var i = 0; i < len; ++i) {
-//       ;(function(i) {
-//         var cur_promise = promises[i]
-//         if (cur_promise instanceof Promise) {
-//           cur_promise.then(
-//             function(val) {
-//               results[i] = val
-//               --num === 0 && resolve(results)
-//             },
-//             function(reas) {
-//               reject(reas)
-//             }
-//           )
-//         } else {
-//           results[i] = cur_promise
-//           --num === 0 && resolve(results)
-//         }
-//       })(i)
-//     }
-//   })
-// }
+Promise.all = function(args) {
+	if (!Array.isArray(args)) {
+		return console.error(
+			`the all args should be array but find ${typeof args}`
+		);
+	}
+	return Promise(function(resolve, reject) {
+		var promises = args;
+		var len = promises.length;
+		var num = promises.length;
+		var results = new Array(len);
+		for (var i = 0; i < len; ++i) {
+			(function(i) {
+				var cur_promise = promises[i];
+				if (cur_promise instanceof Promise) {
+					cur_promise.then(
+						function(val) {
+							results[i] = val;
+							--num === 0 && resolve(results);
+						},
+						function(reas) {
+							reject(reas);
+						}
+					);
+				} else {
+					results[i] = cur_promise;
+					--num === 0 && resolve(results);
+				}
+			})(i);
+		}
+	});
+};
+
+export default Promise;
 
 // p1()
 //   .then(p2)
