@@ -76,3 +76,24 @@ let calculateBonus = function(level, salary) {
 };
 console.log(calculateBonus("S", 20000)); // 输出：80000
 console.log(calculateBonus("A", 10000)); // 输出：30000
+
+//代理模式
+let mult = function() {
+	let a = 1;
+	for (let i = 0, len = arguments.length; i < len; ++i) {
+		a *= arguments[i];
+	}
+	return a;
+};
+
+let cacheProxy = function(fn) {
+	let cache = {};
+	return function() {
+		let arr = Array.prototype.slice(arguments);
+		if (cache.hasOwnProperty(arr)) {
+			return cache[arr];
+		}
+		return fn.apply(this, arguments);
+	};
+};
+console.log(cacheProxy(mult)(1, 2, 3, 4));
