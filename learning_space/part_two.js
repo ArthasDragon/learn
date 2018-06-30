@@ -77,7 +77,7 @@ let calculateBonus = function(level, salary) {
 console.log(calculateBonus("S", 20000)); // 输出：80000
 console.log(calculateBonus("A", 10000)); // 输出：30000
 
-//代理模式
+//第六章    代理模式
 let mult = function() {
 	let a = 1;
 	for (let i = 0, len = arguments.length; i < len; ++i) {
@@ -97,3 +97,65 @@ let cacheProxy = function(fn) {
 	};
 };
 console.log(cacheProxy(mult)(1, 2, 3, 4));
+
+//第七章    迭代器模式
+let each = function(arr, fn) {
+	let len = arr.length;
+	let i = -1;
+	while (++i < len) {
+		fn.call(arr[i], arr[i], i);
+	}
+};
+each([1, 2, 3, 4], function(item, i) {
+	console.log(item, i);
+});
+
+//内部迭代器
+// let compare = function(arr1,arr2){
+// 	if(arr1.length !== arr2.length){
+// 		throw new Error('arr1和arr2不相等')
+// 	}
+// 	each(arr1,function(item,i){
+// 		if(item!==arr2[i]){
+// 			throw new Error(`arr1和arr2不相等`)
+// 		}
+// 	})
+// 	console.log('arr1和arr2相等')
+// }
+// compare([1,2,3],[1,2,4])
+
+//外部迭代器
+var Iterator = function(obj) {
+	let curr_index = 0;
+	let next = function() {
+		return ++curr_index;
+	};
+	let isDone = function() {
+		return curr_index >= obj.length;
+	};
+
+	let getCurrItem = function() {
+		return obj[curr_index];
+	};
+
+	return {
+		next: next,
+		isDone: isDone,
+		getCurrItem: getCurrItem
+	};
+};
+
+let compare = function(iterator1, iterator2) {
+	while (!iterator1.isDone() && !iterator2.isDone()) {
+		if (iterator1.getCurrItem() !== iterator2.getCurrItem()) {
+			return console.warn("iterator1 和 iterator2 不相等");
+		}
+		iterator1.next();
+		iterator2.next();
+	}
+	console.log("iterator1 和 iterator2 相等");
+};
+
+let iterator1 = Iterator([1, 2, 3]);
+let iterator2 = Iterator([1, 2, 4]);
+compare(iterator1, iterator2);
