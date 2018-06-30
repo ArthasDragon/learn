@@ -159,3 +159,81 @@ let compare = function(iterator1, iterator2) {
 let iterator1 = Iterator([1, 2, 3]);
 let iterator2 = Iterator([1, 2, 4]);
 compare(iterator1, iterator2);
+
+//应用实例
+var getActiveUploadObj = function() {
+	try {
+		return new ActiveXObject("TXFTNActiveX.FTNUpload"); // IE 上传控件
+	} catch (e) {
+		return false;
+	}
+};
+var getFlashUploadObj = function() {
+	if (supportFlash()) {
+		// supportFlash 函数未提供
+		var str = '<object type="application/x-shockwave-flash"></object>';
+		return $(str).appendTo($("body"));
+	}
+	return false;
+};
+var getFormUpladObj = function() {
+	var str = '<input name="file" type="file" class="ui-file"/>'; // 表单上传
+	return $(str).appendTo($("body"));
+};
+var iteratorUploadObj = function() {
+	for (var i = 0, fn; (fn = arguments[i++]); ) {
+		var uploadObj = fn();
+		if (uploadObj !== false) {
+			return uploadObj;
+		}
+	}
+};
+var uploadObj = iteratorUploadObj(
+	getActiveUploadObj,
+	getFlashUploadObj,
+	getFormUpladObj
+);
+
+//第八章    发布-订阅模式
+//Dom事件绑定
+//发布   订阅
+//先发布再订阅的情况需要兼容   类似qq离线消息
+//p121   全局事件可能存在命名冲突   必要时需要命名空间
+
+let Event = (function() {
+	let clientList = {};
+	let listen = function(e_name, fn) {
+		if (!clientList) {
+			clientList[e_name] = [];
+		}
+		clientList[e_name].push(fn);
+	};
+	let trigger = function() {
+		let e_name = Array.prototype.shift.call(arguments);
+		let fns = clientList[e_name];
+		if (!fns || !fns.length) {
+			return false;
+		}
+		fns.map(fn => {
+			fn.apply(this, arguments);
+		});
+	};
+	let remove = function(e_name, fn) {
+		if (!clientList.hasOwnProperty(e_name)) {
+			return console.warn(`不存在该类型事件`);
+		}
+		let fns = clientList[e_name];
+		if (!fn) {
+			delete clientList[e_name];
+		} else {
+			fns = fns.filter(item => item !== fn);
+		}
+	};
+	return {
+		listen,
+		trigger,
+		remove
+	};
+})();
+
+//第九章   命令模式

@@ -6,7 +6,7 @@
     "test": "cross-env NODE_ENV=development jest --config ./scripts/jest/jest.config.js",
     "build": "gulp jsToEs5",
     "precommit": "lint-staged",
-    "format": "prettier-eslint --write \"packages/**/*.js\""
+    "format": "prettier-eslint --write \"**/*.js\""
   },
   "repository": {
     "type": "git",
