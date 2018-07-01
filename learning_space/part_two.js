@@ -161,38 +161,38 @@ let iterator2 = Iterator([1, 2, 4]);
 compare(iterator1, iterator2);
 
 //应用实例
-var getActiveUploadObj = function() {
-	try {
-		return new ActiveXObject("TXFTNActiveX.FTNUpload"); // IE 上传控件
-	} catch (e) {
-		return false;
-	}
-};
-var getFlashUploadObj = function() {
-	if (supportFlash()) {
-		// supportFlash 函数未提供
-		var str = '<object type="application/x-shockwave-flash"></object>';
-		return $(str).appendTo($("body"));
-	}
-	return false;
-};
-var getFormUpladObj = function() {
-	var str = '<input name="file" type="file" class="ui-file"/>'; // 表单上传
-	return $(str).appendTo($("body"));
-};
-var iteratorUploadObj = function() {
-	for (var i = 0, fn; (fn = arguments[i++]); ) {
-		var uploadObj = fn();
-		if (uploadObj !== false) {
-			return uploadObj;
-		}
-	}
-};
-var uploadObj = iteratorUploadObj(
-	getActiveUploadObj,
-	getFlashUploadObj,
-	getFormUpladObj
-);
+// var getActiveUploadObj = function() {
+// 	try {
+// 		return new ActiveXObject("TXFTNActiveX.FTNUpload"); // IE 上传控件
+// 	} catch (e) {
+// 		return false;
+// 	}
+// };
+// var getFlashUploadObj = function() {
+// 	if (supportFlash()) {
+// 		// supportFlash 函数未提供
+// 		var str = '<object type="application/x-shockwave-flash"></object>';
+// 		return $(str).appendTo($("body"));
+// 	}
+// 	return false;
+// };
+// var getFormUpladObj = function() {
+// 	var str = '<input name="file" type="file" class="ui-file"/>'; // 表单上传
+// 	return $(str).appendTo($("body"));
+// };
+// var iteratorUploadObj = function() {
+// 	for (var i = 0, fn; (fn = arguments[i++]); ) {
+// 		var uploadObj = fn();
+// 		if (uploadObj !== false) {
+// 			return uploadObj;
+// 		}
+// 	}
+// };
+// var uploadObj = iteratorUploadObj(
+// 	getActiveUploadObj,
+// 	getFlashUploadObj,
+// 	getFormUpladObj
+// );
 
 //第八章    发布-订阅模式
 //Dom事件绑定
@@ -237,3 +237,97 @@ let Event = (function() {
 })();
 
 //第九章   命令模式
+//命令队列    宏命令
+
+// var ball = document.getElementById("ball");
+// var pos = document.getElementById("pos");
+// var moveBtn = document.getElementById("moveBtn");
+// var cancelBtn = document.getElementById("cancelBtn");
+// var MoveCommand = function(receiver, pos) {
+// 	this.receiver = receiver;
+// 	this.pos = pos;
+// 	this.oldPos = null;
+// };
+// MoveCommand.prototype.execute = function() {
+// 	this.receiver.start("left", this.pos, 1000, "strongEaseOut");
+// 	this.oldPos = this.receiver.dom.getBoundingClientRect()[
+// 		this.receiver.propertyName
+// 	];
+// 	// 记录小球开始移动前的位置
+// };
+// MoveCommand.prototype.undo = function() {
+// 	this.receiver.start("left", this.oldPos, 1000, "strongEaseOut");
+// 	// 回到小球移动前记录的位置
+// };
+// var moveCommand;
+// moveBtn.onclick = function() {
+// 	var animate = new Animate(ball);
+// 	moveCommand = new MoveCommand(animate, pos.value);
+// 	moveCommand.execute();
+// };
+// cancelBtn.onclick = function() {
+// 	moveCommand.undo(); // 撤销命令
+// };
+
+//第十章    组合模式
+/*
+注意：
+	1.并非父子关系    只是组合对象和叶对象具有相同的接口
+	2.对叶对象操作需要一致性
+	3.有时需要建立双向映射关系（可以引入中介者模式）
+	4.用职责链模式提高组合模式性能
+*/
+
+/*
+使用情况：
+	1.表示对象的部分-整体层次结构
+	2.用户希望统一对待树中的所有对象
+*/
+
+var Folder = function(name) {
+	this.name = name;
+	this.files = [];
+	this.parent = null;
+};
+Folder.prototype.add = function(file) {
+	file.parent = this;
+	this.files.push(file);
+};
+Folder.prototype.scan = function() {
+	console.log("开始扫描文件夹: " + this.name);
+	for (var i = 0, file, files = this.files; (file = files[i++]); ) {
+		file.scan();
+	}
+};
+Folder.prototype.remove = function() {
+	if (!this.parent) {
+		return false;
+	}
+	this.parent.files = this.parent.files.filter(file => file !== this);
+};
+/******************************* File ******************************/
+var File = function(name) {
+	this.name = name;
+	this.parent = null;
+};
+File.prototype.add = function() {
+	throw new Error("文件下面不能再添加文件");
+};
+File.prototype.scan = function() {
+	console.log("开始扫描文件: " + this.name);
+};
+File.prototype.remove = function() {
+	if (!this.parent) {
+		return false;
+	}
+	this.parent.files = this.parent.files.filter(file => file !== this);
+};
+
+var folder = new Folder("学习资料");
+var folder1 = new Folder("JavaScript");
+var file1 = new Folder("深入浅出 Node.js");
+folder1.add(new File("JavaScript 设计模式与开发实践"));
+folder.add(folder1);
+folder.add(file1);
+folder1.remove(); //移除文件夹
+folder.scan();
