@@ -331,3 +331,5 @@ folder.add(folder1);
 folder.add(file1);
 folder1.remove(); //移除文件夹
 folder.scan();
+
+//第十一章    模板方法模式
