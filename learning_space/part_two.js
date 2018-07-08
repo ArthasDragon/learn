@@ -333,3 +333,122 @@ folder1.remove(); //移除文件夹
 folder.scan();
 
 //第十一章    模板方法模式
+//严重依赖抽象类的设计模式   子类一定要有抽象类中的方法
+/* 
+	使用情况
+	框架父类，子类进行实现
+	钩子函数---customerWantsCondiments
+*/
+
+/* 咖啡和茶 */
+class Beverage {
+	//饮料类
+	constructor() {}
+	boilWater() {
+		console.log("把水煮沸");
+	}
+	brew() {
+		throw new Error("子类必须重写 brew 方法");
+	}
+	pourInCup() {
+		throw new Error("子类必须重写 pourInCup 方法");
+	}
+	addCondiments() {
+		throw new Error("子类必须重写 addCondiments 方法");
+	}
+	customerWantsCondiments() {
+		return true;
+	}
+	init() {
+		this.boilWater();
+		this.brew();
+		this.pourInCup();
+		if (this.customerWantsCondiments()) {
+			this.addCondiments();
+		}
+	}
+}
+
+class Coffee extends Beverage {
+	constructor(props) {
+		super(props);
+	}
+	brew() {
+		console.log("用沸水冲泡咖啡");
+	}
+	pourInCup() {
+		console.log("把咖啡倒进杯子");
+	}
+	addCondiments() {
+		console.log("加糖和牛奶");
+	}
+}
+new Coffee().init();
+
+//第十二章   享元模式
+
+/* 
+	通常分为内部状态和外部状态
+	内部状态存储于对象内部。
+	内部状态可以被一些对象共享。
+    内部状态独立于具体的场景，通常不会改变。
+    外部状态取决于具体的场景，并根据场景而变化，外部状态不能被共享。
+*/
+
+/* 
+	使用情况
+	1.一个程序中使用了大量的相似对象
+	2.对象的大多数状态可以变为外部状态
+	3.可用相对较少的共享对象取代大量对象
+
+	特殊情况
+	1.没有内部或外部状态的享元
+
+	相似方法-----对象池
+*/
+
+//第十三章   职责链模式
+
+class Chain {
+	constructor(fn) {
+		this.do = fn;
+	}
+	next() {
+		this.nextsuccessor && this.nextsuccessor.do(arguments);
+	}
+	setNextSuccessor(chain) {
+		this.nextsuccessor = chain;
+	}
+}
+
+let order500 = function(orderType, pay) {
+	if (orderType === 1 && pay === true) {
+		console.log("500 元定金预购，得到 100 优惠券");
+	} else {
+		this.next(orderType, pay);
+	}
+};
+
+let order200 = function(orderType, pay) {
+	if (orderType === 2 && pay === true) {
+		console.log("200 元定金预购，得到 100 优惠券");
+	} else {
+		this.next(orderType, pay);
+	}
+};
+
+let order300 = function(orderType, pay) {
+	if (orderType === 3 && pay === true) {
+		console.log("300 元定金预购，得到 100 优惠券");
+	} else {
+		this.next(orderType, pay);
+	}
+};
+
+let chain200 = new Chain(order200);
+let chain300 = new Chain(order300);
+let chain500 = new Chain(order500);
+chain200.setNextSuccessor(chain300);
+chain300.setNextSuccessor(chain500);
+
+chain200.do(2, true);
