@@ -452,3 +452,15 @@ chain200.setNextSuccessor(chain300);
 chain300.setNextSuccessor(chain500);
 
 chain200.do(2, true);
+
+//AOP方式
+Function.prototype.after = function(fn) {
+	var self = this;
+	return function() {
+		var ret = self.apply(this, arguments);
+		if (ret === "next") {
+			return fn.apply(this, arguments);
+		}
+		return ret;
+	};
+};
