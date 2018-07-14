@@ -60,6 +60,10 @@ console.log(a === b);
 // render()
 
 // 第五章   策略模式
+/* 
+	应用之一：表单验证
+*/
+
 let strategies = {
 	S: function(salary) {
 		return salary * 4;
@@ -568,3 +572,44 @@ player3.die();
 player4.die();
 
 //第十五章   装饰者模式
+let MissileDecorator = function(plane) {
+	this.plane = plane;
+};
+MissileDecorator.prototype.fire = function() {
+	this.plane.fire();
+	console.log("发射导弹");
+};
+let AtomDecorator = function(plane) {
+	this.plane = plane;
+};
+AtomDecorator.prototype.fire = function() {
+	this.plane.fire();
+	console.log("发射原子弹");
+};
+let Plane = function() {};
+Plane.prototype.fire = function() {
+	console.log("发射普通子弹");
+};
+let plane = new Plane();
+plane = new MissileDecorator(plane);
+plane = new AtomDecorator(plane);
+plane.fire();
+
+//AOP实现
+// Function.prototype.before = function(beforefn) {
+//   var __self = this;
+//   return function() {
+//     beforefn.apply(this, arguments); // (1)
+//     return __self.apply(this, arguments); // (2)
+//   };
+// };
+// Function.prototype.after = function(afterfn) {
+//   var __self = this;
+//   return function() {
+//     var ret = __self.apply(this, arguments);
+//     afterfn.apply(this, arguments);
+//     return ret;
+//   };
+// };
+
+//第十六章   状态模式
