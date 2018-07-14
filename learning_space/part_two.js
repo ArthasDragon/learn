@@ -125,7 +125,7 @@ each([1, 2, 3, 4], function(item, i) {
 // compare([1,2,3],[1,2,4])
 
 //外部迭代器
-var Iterator = function(obj) {
+let Iterator = function(obj) {
 	let curr_index = 0;
 	let next = function() {
 		return ++curr_index;
@@ -161,34 +161,34 @@ let iterator2 = Iterator([1, 2, 4]);
 compare(iterator1, iterator2);
 
 //应用实例
-// var getActiveUploadObj = function() {
+// let getActiveUploadObj = function() {
 // 	try {
 // 		return new ActiveXObject("TXFTNActiveX.FTNUpload"); // IE 上传控件
 // 	} catch (e) {
 // 		return false;
 // 	}
 // };
-// var getFlashUploadObj = function() {
+// let getFlashUploadObj = function() {
 // 	if (supportFlash()) {
 // 		// supportFlash 函数未提供
-// 		var str = '<object type="application/x-shockwave-flash"></object>';
+// 		let str = '<object type="application/x-shockwave-flash"></object>';
 // 		return $(str).appendTo($("body"));
 // 	}
 // 	return false;
 // };
-// var getFormUpladObj = function() {
-// 	var str = '<input name="file" type="file" class="ui-file"/>'; // 表单上传
+// let getFormUpladObj = function() {
+// 	let str = '<input name="file" type="file" class="ui-file"/>'; // 表单上传
 // 	return $(str).appendTo($("body"));
 // };
-// var iteratorUploadObj = function() {
-// 	for (var i = 0, fn; (fn = arguments[i++]); ) {
-// 		var uploadObj = fn();
+// let iteratorUploadObj = function() {
+// 	for (let i = 0, fn; (fn = arguments[i++]); ) {
+// 		let uploadObj = fn();
 // 		if (uploadObj !== false) {
 // 			return uploadObj;
 // 		}
 // 	}
 // };
-// var uploadObj = iteratorUploadObj(
+// let uploadObj = iteratorUploadObj(
 // 	getActiveUploadObj,
 // 	getFlashUploadObj,
 // 	getFormUpladObj
@@ -239,11 +239,11 @@ let Event = (function() {
 //第九章   命令模式
 //命令队列    宏命令
 
-// var ball = document.getElementById("ball");
-// var pos = document.getElementById("pos");
-// var moveBtn = document.getElementById("moveBtn");
-// var cancelBtn = document.getElementById("cancelBtn");
-// var MoveCommand = function(receiver, pos) {
+// let ball = document.getElementById("ball");
+// let pos = document.getElementById("pos");
+// let moveBtn = document.getElementById("moveBtn");
+// let cancelBtn = document.getElementById("cancelBtn");
+// let MoveCommand = function(receiver, pos) {
 // 	this.receiver = receiver;
 // 	this.pos = pos;
 // 	this.oldPos = null;
@@ -259,9 +259,9 @@ let Event = (function() {
 // 	this.receiver.start("left", this.oldPos, 1000, "strongEaseOut");
 // 	// 回到小球移动前记录的位置
 // };
-// var moveCommand;
+// let moveCommand;
 // moveBtn.onclick = function() {
-// 	var animate = new Animate(ball);
+// 	let animate = new Animate(ball);
 // 	moveCommand = new MoveCommand(animate, pos.value);
 // 	moveCommand.execute();
 // };
@@ -284,7 +284,7 @@ let Event = (function() {
 	2.用户希望统一对待树中的所有对象
 */
 
-var Folder = function(name) {
+let Folder = function(name) {
 	this.name = name;
 	this.files = [];
 	this.parent = null;
@@ -295,7 +295,7 @@ Folder.prototype.add = function(file) {
 };
 Folder.prototype.scan = function() {
 	console.log("开始扫描文件夹: " + this.name);
-	for (var i = 0, file, files = this.files; (file = files[i++]); ) {
+	for (let i = 0, file, files = this.files; (file = files[i++]); ) {
 		file.scan();
 	}
 };
@@ -306,7 +306,7 @@ Folder.prototype.remove = function() {
 	this.parent.files = this.parent.files.filter(file => file !== this);
 };
 /******************************* File ******************************/
-var File = function(name) {
+let File = function(name) {
 	this.name = name;
 	this.parent = null;
 };
@@ -323,9 +323,9 @@ File.prototype.remove = function() {
 	this.parent.files = this.parent.files.filter(file => file !== this);
 };
 
-var folder = new Folder("学习资料");
-var folder1 = new Folder("JavaScript");
-var file1 = new Folder("深入浅出 Node.js");
+let folder = new Folder("学习资料");
+let folder1 = new Folder("JavaScript");
+let file1 = new Folder("深入浅出 Node.js");
 folder1.add(new File("JavaScript 设计模式与开发实践"));
 folder.add(folder1);
 folder.add(file1);
@@ -455,12 +455,116 @@ chain200.do(2, true);
 
 //AOP方式
 Function.prototype.after = function(fn) {
-	var self = this;
+	let self = this;
 	return function() {
-		var ret = self.apply(this, arguments);
+		let ret = self.apply(this, arguments);
 		if (ret === "next") {
 			return fn.apply(this, arguments);
 		}
 		return ret;
 	};
 };
+
+//第十四章   中介者模式
+
+//小游戏模拟
+//也可以用es5实现    需要闭包
+
+/* 
+	迪米特法则（最少知识法则）
+*/
+
+class Player {
+	constructor(name, teamColor, playDirector) {
+		this.name = name;
+		this.teamColor = teamColor;
+		this.playDirector = playDirector;
+		this.state = "alive";
+	}
+	win() {
+		console.log(`${this.name} won`);
+	}
+	lose() {
+		console.log(`${this.name} lost`);
+	}
+	die() {
+		this.state = "dead";
+		this.playDirector.receiveMessage("playerDead", this);
+	}
+	remove() {
+		this.playDirector.receiveMessage("removePlayer", this);
+	}
+	changeTeam(color) {
+		this.playDirector.receiveMessage("changeTeam", this, color);
+	}
+}
+
+class playDirector {
+	constructor() {
+		return (
+			playDirector.cache ||
+			(playDirector.cache = {
+				receiveMessage: playDirector.receiveMessage
+			})
+		);
+	}
+	static addPlayer(player) {
+		let teamColor = player.teamColor;
+		this.players[teamColor] = this.players[teamColor] || [];
+		this.players[teamColor].push(player);
+	}
+	static removePlayer(player) {
+		let teamColor = player.teamColor;
+		this.players[teamColor] = this.players[teamColor].filter(
+			per => per !== player
+		);
+	}
+	static changeTeam(player, newTeamColor) {
+		this.removePlayer(player);
+		player.teamColor = newTeamColor;
+		this.addPlayer(player);
+	}
+	static playerDead(player) {
+		let teamColor = player.teamColor;
+		let teamPlayers = this.players[teamColor];
+		let all_dead = teamPlayers.every(per => per.state === "dead");
+		if (all_dead) {
+			teamPlayers.map(per => per.lose());
+			Object.keys(this.players).map(color => {
+				if (color !== teamColor) {
+					this.players[color].map(per => {
+						per.win();
+					});
+				}
+			});
+		}
+	}
+	static receiveMessage() {
+		let message = Array.prototype.shift.call(arguments);
+		playDirector[message](...arguments);
+	}
+}
+playDirector.cache = null;
+playDirector.players = {};
+
+let playerFactory = function(name, teamColor, pd) {
+	let newPlayer = new Player(name, teamColor, pd); // 创造一个新的玩家对象
+	pd.receiveMessage("addPlayer", newPlayer); // 给中介者发送消息，新增玩家
+	return newPlayer;
+};
+// 红队：
+let player1 = playerFactory("皮蛋1", "red", playDirector);
+let player2 = playerFactory("皮蛋2", "red", playDirector);
+let player3 = playerFactory("皮蛋3", "red", playDirector);
+let player4 = playerFactory("皮蛋4", "red", playDirector);
+let player5 = playerFactory("皮蛋5", "blue", playDirector);
+let player6 = playerFactory("皮蛋6", "blue", playDirector);
+let player7 = playerFactory("皮蛋7", "blue", playDirector);
+let player8 = playerFactory("皮蛋8", "blue", playDirector);
+
+player1.die();
+player2.die();
+player3.die();
+player4.die();
+
+//第十五章   装饰者模式
