@@ -613,3 +613,79 @@ plane.fire();
 // };
 
 //第十六章   状态模式
+//状态为对象
+/* 
+	优点：
+		1.状态模式定义了状态与行为之间的关系，并将它们封装在一个类里。通过增加新的状态
+类，很容易增加新的状态和转换
+		2.避免Context无限膨胀，状态切换的逻辑被分布在状态类中，也去掉了Context中原本过多的条件分支
+		3.用对象代替字符串来记录当前状态，使得状态的切换更加一目了然
+		4.Context中的请求动作和状态类中封装的行为可以非常容易地独立变化而互不影响
+	缺点：
+		1.会定义许多状态类，因而增加不少对象
+		2.整个状态机逻辑分散
+
+	优化
+		1.state对象的创建和销毁方式
+			状态改变频繁时：一开始就创建好所有的对象
+			state对象比较庞大：晋档state对象被需要时才创建
+		2.state对象之间可以共享
+
+	与策略模式之间的关系：
+		1.相同点：它们都有一个上下文、一些策略或者状态类，上下文把请
+求委托给这些类来执行
+		2.不同点：策略模式中的各个策略类之间是平等又平行的，它们之间没有任何联系，
+所以客户必须熟知这些策略类的作用，以便客户可以随时主动切换算法；而在状态模式中，状态
+和状态对应的行为是早已被封装好的，状态之间的切换也早被规定完成，“改变行为”这件事情
+发生在状态模式内部
+
+*/
+
+//es5下的状态模式
+// let State = function() {};
+// State.prototype.buttonWasPressed = function() {
+//   throw new Error("父类的buttonWasPressed方法必须被重写");
+// };
+
+// let OffLightState = function(light) {
+//   this.light = light;
+// };
+// OffLightState.prototype = new State();
+
+// OffLightState.prototype.buttonWasPressed = function() {
+//   console.log("超强光");
+//   this.light.setState(this.light.SuperStrongLightState);
+// };
+
+// let SuperStrongLightState = function(light) {
+//   this.light = light;
+// };
+// SuperStrongLightState.prototype = new State();
+
+// SuperStrongLightState.prototype.buttonWasPressed = function() {
+//   console.log("关灯");
+//   this.light.setState(this.light.OffLightState);
+// };
+
+// let Light = function() {
+//   this.offLightState = new OffLightState(this);
+//   this.superStrongLightState = new SuperStrongLightState(this);
+//   this.button = null;
+// };
+
+// Light.prototype.init = function() {
+//   let button = document.createElement("button");
+//   let self = this;
+//   this.button = document.body.appendChild(button);
+//   this.button.innerHTML = "开关";
+//   this.currState = this.offLightState;
+//   this.button.onclick = function() {
+//     self.currState.buttonWasPressed();
+//   };
+// };
+// Light.prototype.setState = function(newState) {
+//   this.currState = newState;
+// };
+
+//第十七章    适配器模式
+//兼容处理
