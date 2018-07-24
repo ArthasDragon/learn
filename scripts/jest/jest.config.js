@@ -1,5 +1,3 @@
-"use strict";
-
 module.exports = {
 	//   haste: {
 	//     hasteImplModulePath: require.resolve('./noHaste.js')

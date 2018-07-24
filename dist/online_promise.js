@@ -60,7 +60,7 @@ Promise.prototype.then = function(onFulfilled, onRejected) {
 				(typeof onFulfilled === "function" && onFulfilled(value)) || value;
 
 			//判断是不是promise 对象
-			if (ret && typeof ret["then"] == "function") {
+			if (ret && typeof ret["then"] === "function") {
 				ret.then(
 					function(value) {
 						resolve(value);
