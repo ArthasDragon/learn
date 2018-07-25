@@ -1,4 +1,4 @@
-//第二章  this   apply   call
+//第二章  this   apply      call
 //2.1 this    start
 //1.对象的方法调用
 var obj = {
