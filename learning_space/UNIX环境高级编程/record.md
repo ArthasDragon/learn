@@ -143,6 +143,64 @@
 > 2.  与文件或目录无关的运行时限制（sysconf 函数）
 > 3.  与文件或目录有关的运行时限制（pathconf 和 fpathconf 函数）
 
-### 2.5.1 ISO C 限制
+### ISO C 限制
 
 ISO C 顶一顶所有编译时限制都在头文件<limits.h>中
+
+三种特别强调常量：
+
+> 1.  FOPEN_MAX (<stdio.h>中，保证可同时打开的标准 I/O 流的最小个数，POSIX.1 中的 STREAM_MAX 应与其具有相同的值)
+> 2.  TMP_MAX(<stdio.h>中，由 tmpnam 函数产生的唯一文件名的最大个数)
+> 3.  FILENAME_MAX(应避免使用因为 POSIX.1 提供了更好的 NAME_MAX 和 PATH_MAX)
+
+![threeConstants](./imgs/threeConstants.png)
+
+### POSIX 限制（略）
+
+### 函数 sysconf、pathconf 和 fpathconf
+
+调用这三个函数获得运行时限制
+![executeThreeFunctions](./imgs/executeThreeFunctions.png)
+
+- 如果 name 参数并不是一个合适的常量，这三个函数都返回-1，并把 errno 置为 EINVAL
+- 有些 name 返回一个变量值（>=0）或者提示该值不确定（-1）
+
+### 不确定的运行时限制
+
+> 路径名、最大打开文件数等（需运行时判断手动设置或其他处理方式）
+
+## 2.6 选项
+
+POSIX.1 三种处理选项的方法
+
+> 1.  编译时选项定义在<unistd.h>中
+> 2.  与文件或目录无关的运行时选项用 sysconf 函数来判断
+> 3.  与文件或目录有关的运行时选项通过调用 pathconf 或 fpathconf 函数来判断
+
+对于每一个选项，有以下三种可能的平台支持状态
+
+> 1.  如果符号常量没有定义或者定义值为-1，name 该平台在编译时并不支持相应选项
+> 2.  如果符号常量的定义值大于 0，那么该平台支持相应选项
+> 3.  如果符号常量的定义值为 0，则必须调用 sysconf、pathconf 或 fpathconf 来判断相应选项是否受到支持
+
+## 2.7 功能测试宏
+
+\_POSIX_C_SOURCE、\_XOPEN_SOURCE 等
+
+> \_POSIX_C_SOURCE（编译一个程序时，希望它只与 POSIX 的定义相关，不与任何实现定义的常量冲突则定义该常量）
+
+以下命令定义该宏
+
+```
+    cc -D_POSIX_C_SOURCE=200809L file.c
+```
+
+## 2.8 基本系统数据类型
+
+头文件<sys/types.h>和其他头文件中定义了某些与实现有关的数据类型，它们被称为基本系统数据类型，都是用 C 的 typedef 来定义的，绝大多数以\_t 结尾
+
+![basicTypes](./imgs/basicTypes.png)
+
+## 2.9 标准之间的冲突
+
+主要关注 ISO C 标准和 POSIX.1 之间的差别，如果出现冲突，POSIX.1 服从 ISO C 标准，但是 clock_t 和某些函数仍然有细微差别
