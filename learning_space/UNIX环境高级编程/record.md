@@ -1,5 +1,6 @@
 - [第一章 UNIX 基础知识](#chapter1)
 - [第二章 UNIX 标准及实现](#chapter2)
+- [第三章 文件 I/O](#chapter3)
 
 <h1 id='chapter1'>第一章 UNIX 基础知识</h1>
 
@@ -95,7 +96,7 @@
 
 ![系统调用和库函数](./imgs/system&repo.png)
 
-<h1 id='chapter1'>第二章 UNIX 标准及实现</h1>
+<h1 id='chapter2'>第二章 UNIX 标准及实现</h1>
 
 ## 2.2 UNIX 标准化
 
@@ -204,3 +205,5 @@ POSIX.1 三种处理选项的方法
 ## 2.9 标准之间的冲突
 
 主要关注 ISO C 标准和 POSIX.1 之间的差别，如果出现冲突，POSIX.1 服从 ISO C 标准，但是 clock_t 和某些函数仍然有细微差别
+
+<h1 id='chapter3'>第三章 文件I/O</h1>
