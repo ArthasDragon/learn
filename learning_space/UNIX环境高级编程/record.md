@@ -96,3 +96,53 @@
 ![系统调用和库函数](./imgs/system&repo.png)
 
 <h1 id='chapter1'>第二章 UNIX 标准及实现</h1>
+
+## 2.2 UNIX 标准化
+
+### 2.2.1 ISO C
+
+> C 程序设计语言的标准，现由 WG14 工作组维护和开发
+>
+> 下图中头文件在 4 种 UNIX 实现（FreeBSD8.0、Linux3.2.0、Mac OS X10.6.8 和 Solaris10）中都支持
+
+![头文件](./imgs/basicHeader.png)
+
+### 2.2.2 IEEE POSIX
+
+> 图示四种 UNIX 系统包含的必需、可选头文件
+
+必需头文件
+
+![必需头文件](./imgs/posixEssentialHeader.png)
+
+可选头文件
+
+![可选头文件](./imgs/posixUnessentialHeader.png)
+
+### 2.2.3 Single UNIX Specification
+
+> POSIX.1 标准的一个超集
+
+## 2.3 UNIX 系统实现
+
+> SVR4、4.4BSD、FreeBSD、Linux、Mac OS X、Solaris 等
+
+## 2.4 标准和实现的关系
+
+> 前面提到的各个标准定义了任一实际系统的子集
+
+## 2.5 限制
+
+问题：某些限制在一个给定的实现中可能是固定的（头文件中定义），而在另一个实现中则可能是变动的（需要一个运行时函数调用）
+
+解决方案：
+
+提供以下三种限制
+
+> 1.  编译时限制（头文件）
+> 2.  与文件或目录无关的运行时限制（sysconf 函数）
+> 3.  与文件或目录有关的运行时限制（pathconf 和 fpathconf 函数）
+
+### 2.5.1 ISO C 限制
+
+ISO C 顶一顶所有编译时限制都在头文件<limits.h>中
