@@ -1,6 +1,7 @@
 - [第一章 UNIX 基础知识](#chapter1)
 - [第二章 UNIX 标准及实现](#chapter2)
 - [第三章 文件 I/O](#chapter3)
+- [第四章 文件和目录](#chapter4)
 
 <h1 id='chapter1'>第一章 UNIX 基础知识</h1>
 
@@ -345,3 +346,47 @@ UNIX 系统支持在不同进程间共享打开文件
 复制一个描述符的另一种方法是使用 fcntl 函数
 
 ## 3.13 函数 sync、fsync 和 fdatasync
+
+通常，当内核需要重用缓冲区来存放其他磁盘块数据时，会把所有延迟写数据块写入磁盘。为保证磁盘上实际文件系统与缓冲区中内容的一致性，UNIX 系统提供了 sync、fsync 和 fdatasync 三个函数
+
+![threeFunctions](./imgs/threeFunctions.png)
+
+sync 只将所有修改过的块缓冲区排入写队列就返回
+
+update 系统守护进程周期性调用 sync 函数。保证定期冲洗内核的块缓冲区
+
+fsync 函数只对由文件描述符 fd 指定的一个文件起作用，且等待写磁盘操作结束才返回
+
+fdatasync 函数类似于 fsync，但它只影响文件的数据部分
+
+## 3.14 函数 fcntl
+
+fcntl 函数可以改变已经打开文件的属性
+
+```
+    #include <fcntl.h>
+
+    int fcntl(int fd, int cmd, .../* int arg */)
+```
+
+返回值：成功 -> 依赖 cmd，出错 -> -1
+
+以下 5 种功能：
+
+1.  复制一个已有的描述符（cmd=F_DUPFD 或 F_DUPFD_CLOEXEC）
+2.  获取/设置文件描述符标志（cmd=F_GETFD 或 F_SETFD）
+3.  获取/设置文件状态标志（cmd=F_GETFL 或 F_SETFL）
+4.  获取/设置异步 I/O 所有权（cmd=F_GETOWN 或 F_SETOWN）
+5.  获取/设置记录锁（cmd=F_GETLK、F_SETLK 或 F_SETLKW）
+
+## 3.15 函数 ioctl
+
+ioctl 函数一直是 I/O 操作的杂物箱
+
+![ioctl](./imgs/ioctl.png)
+
+## 3.16 /dev/fd
+
+较新的系统都提供名为/dev/fd 的目录，其目录项是名为 0、1、2 等的文件。打开文件/dev/fd/n 等效于复制描述符 n（如果描述符 n 是打开的）
+
+<h1 id='chapter4'>第四章 文件和目录</h1>
