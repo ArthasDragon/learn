@@ -271,3 +271,77 @@ fd 参数把 open 和 openat 函数区分开
 ```
 
 返回值：成功 -> 新的文件偏移量，出错 -> -1
+
+对参数 offset 的解释与参数 whence 的值有关
+
+1.  若 whence 是 SEEK_SET，则将该文件的偏移量设置为距文件开始处 offset 个字节
+2.  若 whence 是 SEEK_CUR，则将该文件的偏移量设置为当前值加 offset，offset 可正可负
+3.  若 whence 是 SEEK_END，则将该文件的偏移量设置为文件长度加 offset，offset 可正可负
+
+## 3.7 函数 read
+
+从打开文件中读数据
+
+```
+    #include <unistd.h>
+
+    ssize_t read(int fd, void *buf, size_t nbytes)
+```
+
+返回值：读到的字节数，若已到文件尾，返回 0，出错，-1
+
+实际读到的字节数少于要求读的字节数的情况：
+
+1.  读普通文件时，读到要求字节数之前已到达了文件尾端
+2.  从终端设备读时，通常一次最多读一行
+3.  从网络读时，网络中的缓冲机制
+4.  从管道或 FIFO 读时，管道包含的字节少于所需数量
+5.  从某些面向记录的设备读时，一次最多返回一个记录
+6.  一信号造成中断，而已读了部分数据量
+
+## 3.8 函数 write
+
+向打开文件写数据
+
+```
+    #include <unistd.h>
+
+    ssize_t write(int fd, const void *buf, size_t nbytes);
+```
+
+返回值：成功 -> 已写的字节数，出错 -> -1
+
+## 3.9 I/O 的效率
+
+## 3.10 文件共享
+
+UNIX 系统支持在不同进程间共享打开文件
+
+1.  每个进程在进程表中都有一个记录项，包含一张打开文件描述符表（文件描述符标志、指向一个文件表项的指针）
+2.  内核为所有打开文件维持一张文件表（文件状态标志、当前文件偏移量、指向该文件 v 节点表项的指针）
+3.  每个打开文件都有一个 v 节点结构
+
+![coreDataStructure](./imgs/coreDataStructure.png)
+
+![3-8](./imgs/3-8.png)
+
+## 3.11 原子操作
+
+一般而言，原子操作指的是由多步组成的一个操作
+
+1.  追加文件末尾
+    > 打开文件时设置 O_APPEND 标志
+2.  函数 pread 和 pwrite
+    > ![pread_pwrite](./imgs/pread_pwrite.png)
+3.  创建一个文件
+    > open 函数的 O_CREAT 和 O_EXCL 选项
+
+## 3.12 函数 dup 和 dup2
+
+均为原子操作
+
+![dup](./imgs/dup.png)
+
+复制一个描述符的另一种方法是使用 fcntl 函数
+
+## 3.13 函数 sync、fsync 和 fdatasync
