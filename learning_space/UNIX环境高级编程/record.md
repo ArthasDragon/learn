@@ -211,3 +211,63 @@ POSIX.1 三种处理选项的方法
 ## 3.2 文件描述符
 
 对于内核而言，所有打开的文件都通过文件描述符引用（一个非负整数）。当打开一个现有文件或创建一个新文件时，内核向进程返回一个文件描述符。当读、写一个文件时，使用 open 或 create 返回的文件描述符标识该文件，将其作为参数传送给 read 或 write。
+
+## 3.3 函数 open 和 openat
+
+调用 open 或 openat 函数打开或创建一个文件
+
+```
+    #include <fcntl.h>
+
+    int open(const char *path, int aflag, ...);
+
+    int openat(int fd, const char *path, int aflag, ...);
+```
+
+由 open 和 openat 函数返回的文件描述符一定是最小的未用描述符数值
+
+fd 参数把 open 和 openat 函数区分开
+
+1.  path 参数指定的是绝对路径名，fd 参数被忽略，openat===open
+2.  path 参数指定的是相对路径名，fd 参数为相对路径名在文件系统中的开始地址
+3.  path 参数指定相对路径名，fd 参数具有特殊值 AT_FDCWD。路径名在当前工作目录中获取
+
+## 3.4 函数 creat
+
+创建新文件
+
+```
+    #include <fcntl.h>
+
+    int creat(const char *path, mode_t mode)
+```
+
+返回值：成功则返回只写打开的文件描述符，出错返回-1
+
+## 3.5 函数 close
+
+关闭一个打开的文件
+
+```
+    #include <unistd.h>
+
+    int close (int fd)
+```
+
+返回值：成功 0，出错-1
+
+关闭一个文件时还会释放该进程加在该文件上的所有记录锁
+
+## 3.6 函数 lseek
+
+每个打开文件都有一个与其相关联的“当前文件偏移量”
+
+调用 lseek 可为一个打开文件设置偏移量
+
+```
+    #include <unistd.h>
+
+    off_t lseek(int fd, off_t offset, int whence)
+```
+
+返回值：成功 -> 新的文件偏移量，出错 -> -1
