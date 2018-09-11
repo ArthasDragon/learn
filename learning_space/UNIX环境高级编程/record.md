@@ -390,3 +390,7 @@ ioctl 函数一直是 I/O 操作的杂物箱
 较新的系统都提供名为/dev/fd 的目录，其目录项是名为 0、1、2 等的文件。打开文件/dev/fd/n 等效于复制描述符 n（如果描述符 n 是打开的）
 
 <h1 id='chapter4'>第四章 文件和目录</h1>
+
+## 4.2 函数 stat、fstat、fstatat、lstat
+
+![4.2](./imgs/4.2.png)
