@@ -429,3 +429,43 @@ ioctl 函数一直是 I/O 操作的杂物箱
 > 进程的有效组 ID
 >
 > 文件所在目录的组 ID
+
+## 4.7 函数 access 和 faccessat
+
+access 和 faccessat 按实际用户 ID 和实际组 ID 进行访问权限测试（步骤同 4.5）
+
+```
+    #include <unistd.h>
+    int access(const char *pathname, int mode);
+    int faccessat(int fd, const char *pathname, int mode, int flag);
+```
+
+返回值：成功 -> 0，出错 -> -1
+
+## 4.8 函数 umask
+
+umask 函数为进程设置文件模式创建屏蔽字，并返回之前的值（少数几个没有出错返回函数中的一个）
+
+八进制数（屏蔽的权限）/符号形式（许可的权限）
+
+## 4.9 函数 chmod、fchmod、fchmodat
+
+更改现有文件的访问权限
+
+```
+    #include <sys/stat.h>
+
+    int chmod(const char *pathname, mode_t mode);
+
+    int fchmod(int fd, mode_t mode);
+
+    int fchmodat(int fd, const char *pathname, mode_t mode, int flag);
+```
+
+返回值：成功 -> 0，出错 -> -1
+
+chmod 在指定的文件上进行操作，fchmod 对已打开的文件进行操作
+
+进程的有效用户 ID 必须等于文件的所有者 ID，或者进程具有超级用户权限
+
+## 4.10 粘着位
