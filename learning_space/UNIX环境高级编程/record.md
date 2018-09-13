@@ -489,3 +489,29 @@ stat 结构成员 st_size 表示以字节为单位的文件的长度
 ## 4.14 文件系统
 
 本节讨论 UFS 文件系统
+
+![4.14](./imgs/4.14.png)
+
+![4.14(2)](<./imgs/4.14(2).png>)
+
+## 4.15 函数 link、linkat、unlink、unlinkat、remove
+
+创建一个指向现有文件的链接的方法是使用 link 函数或 linkat 函数
+
+![4-15](./imgs/4-15.png)
+
+## 4.16 函数 rename 和 renameat
+
+文件或目录可以用 rename 或 renameat 重命名
+
+![4-16](./imgs/4-16.png)
+
+## 4.17 符号链接
+
+符号链接是对一个文件的间接指针，而上节硬链接直接指向文件 i 节点，符号链接用来避开硬链接的一些限制。
+
+![4-17](./imgs/4-17.png)
+
+## 4.18 创建和读取符号链接
+
+用 symlink 或 symlinkat 创建
