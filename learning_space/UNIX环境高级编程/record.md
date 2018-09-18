@@ -2,6 +2,7 @@
 - [第二章 UNIX 标准及实现](#chapter2)
 - [第三章 文件 I/O](#chapter3)
 - [第四章 文件和目录](#chapter4)
+- [第五章 标准 I/O 库](#chapter5)
 
 <h1 id='chapter1'>第一章 UNIX 基础知识</h1>
 
@@ -563,3 +564,5 @@ getcwd 取得当前工作目录
 ## 4.25 文件访问权限位小结
 
 ![4-26](./imgs/4-26.png)
+
+<h1 id='chapter5'>第五章 标准I/O库</h1>
