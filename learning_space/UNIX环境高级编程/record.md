@@ -717,3 +717,15 @@ fputs 和 puts 提供每次输出一行的功能
 下列两个函数执行二进制 I/O 操作
 
 ![5.9_1](./imgs/5.9_1.png)
+
+## 5.10 定位流
+
+3 种方法定位标准 I/O 流
+
+1.  ftell 和 fseek 函数
+2.  ftello 和 fseeko 函数
+3.  fgetpos 和 fsetpos 函数
+
+![5.10_1](./imgs/5.10_1.png)
+
+## 5.11 格式化 I/O
