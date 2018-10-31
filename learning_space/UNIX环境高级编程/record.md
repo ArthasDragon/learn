@@ -1258,3 +1258,34 @@ pause 函数使调用进程挂起直至捕捉到一个信号
 ## 10.18 函数 system
 
 POSIX.1 要求 system 忽略 SIGINT 和 SIGQUI，阻塞 SIGCHLD
+
+## 10.19 函数 sleep、nanosleep 和 clock_nanosleep
+
+![10.19_1](./imgs/10.19_1.png)
+
+sleep 函数使调用进程被挂起直到满足下面两个条件之一：
+
+1.  已经过了 seconds 所指定的墙上时钟时间
+2.  调用进程捕捉到一个信号并从信号处理程序返回
+
+nanosleep 函数与 sleep 函数类似，但提供了纳秒级的精度
+
+clock_nanosleep 相对于特定时钟的延迟时间来挂起调用线程
+
+## 10.20 函数 sigqueue
+
+使用排队信号必须做以下几个操作：
+
+1.  使用 sigaction 函数安装信号处理程序时指定 SA_SIGINFO 标志
+2.  在 sigaction 结构的 sa_sigaction 成员中提供信号处理程序
+3.  使用 sigqueue 函数发送信号
+
+![10-30](./imgs/10-30.png)
+
+## 10.21 作业控制信号
+
+![10.21_1](./imgs/10.21_1.png)
+
+除 SIGCHLD 以外，大多数应用程序并不处理这些信号，交互式 shell 则通常会处理这些信号的所有工作
+
+## 10.22 信号名和编号
