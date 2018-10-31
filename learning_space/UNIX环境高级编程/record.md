@@ -1254,3 +1254,7 @@ pause 函数使调用进程挂起直至捕捉到一个信号
 ## 10.17 函数 abort
 
 使程序异常终止，ISOC 规定，调用 abort 将向主机环境递送一个未成功终止的通知，其方法是调用 raise(SIGABRT)函数
+
+## 10.18 函数 system
+
+POSIX.1 要求 system 忽略 SIGINT 和 SIGQUI，阻塞 SIGCHLD
