@@ -10,6 +10,7 @@
 - [第十章 信号](#chapter10)
 - [第十一章 线程](#chapter11)
 - [第十二章 线程控制](#chapter12)
+- [第十三章 守护进程](#chapter13)
 
 <h1 id='chapter1'>第一章 UNIX 基础知识</h1>
 
@@ -1456,3 +1457,5 @@ pthread_cancel 请求取消同一进程中的其他线程
 ## 12.10 线程和 I/O
 
 pread 和 pwrite 函数（原子操作）
+
+<h1 id='chapter13'>第十三章 守护进程</h1>
