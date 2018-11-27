@@ -11,6 +11,7 @@
 - [第十一章 线程](#chapter11)
 - [第十二章 线程控制](#chapter12)
 - [第十三章 守护进程](#chapter13)
+- [第十四章 高级 I/O](#chapter14)
 
 <h1 id='chapter1'>第一章 UNIX 基础知识</h1>
 
@@ -1522,3 +1523,5 @@ openlog，closelog，syslog，setlogmask
 客户进程和服务器进程之间的通信是单向的。
 
 在服务器进程中调用 fork 然后 exec 另一个程序来向客户进程提供服务是很常见的。
+
+<h1 id='chapter14'>第十四章 高级I/O</h1>
