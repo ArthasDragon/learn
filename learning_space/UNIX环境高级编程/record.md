@@ -1765,3 +1765,13 @@ shmget、shmctl、shmat、shmdt
 如果在两个无关进程之间要使用共享存储段，那么有两种替代的方法。一是应用程序使用 XSI 共享存储函数，另一种是使用 mmap 将同一文件映射至它们的地址空间，为此使用 MAP_SHARED 标志
 
 ## 15.10 POSIX 信号量
+
+POSIX 信号量机制是 3 种 IPC 机制之一，3 种 IPC 机制源于 POSIX.1 的实时扩展。
+
+POSIX 信号量有两种形式：命名的和未命名的
+
+sem_open、sem_close、sem_unlink、sem_wait、sem_trywait、sem_timewait、sem_post
+
+sem_init、sem_destroy、sem_getvalue
+
+## 15.11 客户进程-服务器进程属性
