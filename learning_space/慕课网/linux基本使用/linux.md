@@ -53,3 +53,39 @@ which 搜索命令所在路径及别名
 ![find1](./imgs/find1.png)
 
 ![find2](./imgs/find2.png)
+
+#### grep 命令
+
+![grep1](./imgs/grep1.png)
+
+#### 帮助命令
+
+```
+    man
+    man -f / whatis
+    man -k / apropos
+```
+
+![man1](./imgs/man1.png)
+
+```
+    --help  
+    shell内部命令   help
+    info
+```
+
+#### 压缩命令
+
+```
+    zip    unzip    .zip
+    gzip   gunzip   .gz
+    bzip2  bunzip2  .bz2
+```
+
+#### 打包命令
+
+```
+    tar
+```
+
+#### 关机和重启命令
