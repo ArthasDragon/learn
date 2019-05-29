@@ -61,3 +61,12 @@ while (i <= n) {
     return pos;
   }
 ```
+
+> 最好最坏复杂度意义不大：最好情况时间复杂度：O(1)、最坏情况时间复杂度：O(n)
+
+平均情况时间复杂度（加权平均时间复杂度）
+
+![averageComplexity](./imgs/averageComplexity.png)
+
+
+均摊时间复杂度
