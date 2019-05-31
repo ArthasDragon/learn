@@ -3,6 +3,7 @@
 - [复杂度分析](#complexity)
 - [数组](#array)
 - [链表](#linkedList)
+- [栈](#stack)
 
 <h1 id="complexity">复杂度分析</h1>
 
@@ -276,6 +277,67 @@ LRU 缓存淘汰算法
 - 两个有序的链表合并
 - 删除链表倒数第 n 个结点
 - 求链表的中间结点
+
+<h1 id="stack">栈</h1>
+
+> 类似放置一摞盘子，先进后出，后进先出。
+
+![stack](./imgs/stack.png)
+
+> 栈是一种“操作受限”的线性表，只允许在一端插入和删除数据。
+
+当某个数据集合只涉及在一端插入和删除数据，并且满足后进先出、先进后出的特性，我们就应该首选“栈”这种数据结构。
+
+实际上，栈既可以用数组来实现，也可以用链表来实现。用数组实现的栈，我们叫作 <strong>顺序栈</strong>，用链表实现的栈，我们叫作 <strong>链式栈</strong>
+
+## 如何实现一个栈
+
+```JAVA
+  // 基于数组实现的顺序栈
+public class ArrayStack {
+  private String[] items;  // 数组
+  private int count;       // 栈中元素个数
+  private int n;           // 栈的大小
+
+  // 初始化数组，申请一个大小为 n 的数组空间
+  public ArrayStack(int n) {
+    this.items = new String[n];
+    this.n = n;
+    this.count = 0;
+  }
+
+  // 入栈操作
+  public boolean push(String item) {
+    // 数组空间不够了，直接返回 false，入栈失败。
+    if (count == n) return false;
+    // 将 item 放到下标为 count 的位置，并且 count 加一
+    items[count] = item;
+    ++count;
+    return true;
+  }
+  
+  // 出栈操作
+  public String pop() {
+    // 栈为空，则直接返回 null
+    if (count == 0) return null;
+    // 返回下标为 count-1 的数组元素，并且栈中元素个数 count 减一
+    String tmp = items[count-1];
+    --count;
+    return tmp;
+  }
+}
+
+```
+
+## 支持动态扩容的顺序栈
+
+![activeStack](./imgs/activeStack.png)
+
+![popComplexity](./imgs/popComplexity.png)
+
+## 栈在函数调用的应用
+
+函数调用栈
 
 
 
