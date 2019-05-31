@@ -339,6 +339,32 @@ public class ArrayStack {
 
 函数调用栈
 
+我们知道，操作系统给每个线程分配了一块独立的内存空间，这块内存被组织成“栈”这种结构, 用来存储函数调用时的临时变量。每进入一个函数，就会将临时变量作为一个栈帧入栈，当被调用函数执行完成，返回之后，将这个函数对应的栈帧出栈。为了更好地理解，我们一块来看下这段代码的执行过程。
+
+```C++
+int main() {
+  int a = 1; 
+  int ret = 0;
+  int res = 0;
+  ret = add(3, 5);
+  res = a + ret;
+  printf("%d", res);
+  reuturn 0;
+}
+
+int add(int x, int y) {
+  int sum = 0;
+  sum = x + y;
+  return sum;
+}
+
+```
+
+在执行到 add() 函数时，函数调用栈的情况：
+
+![addFuncStack](./imgs/addFuncStack.png)
+
+## 栈在表达式求值中的应用
 
 
 
