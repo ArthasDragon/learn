@@ -5,6 +5,7 @@
 - [链表](#linkedList)
 - [栈](#stack)
 - [队列](#queue)
+- [递归](#recursion)
 
 <h1 id="complexity">复杂度分析</h1>
 
@@ -390,6 +391,141 @@ int add(int x, int y) {
 > 队列跟栈一样，也是一种操作受限的线性表数据结构
 
 ## 顺序队列和链式队列
+
+用数组实现的队列叫作顺序队列，用链表实现的队列叫做链式队列。
+
+
+基于数组的队列实现方法
+
+```java
+  // 用数组实现的队列
+public class ArrayQueue {
+  // 数组：items，数组大小：n
+  private String[] items;
+  private int n = 0;
+  // head 表示队头下标，tail 表示队尾下标
+  private int head = 0;
+  private int tail = 0;
+
+  // 申请一个大小为 capacity 的数组
+  public ArrayQueue(int capacity) {
+    items = new String[capacity];
+    n = capacity;
+  }
+
+    // 入队操作，将 item 放入队尾
+  public boolean enqueue(String item) {
+    // tail == n 表示队列末尾没有空间了
+    if (tail == n) {
+      // tail ==n && head==0，表示整个队列都占满了
+      if (head == 0) return false;
+      // 数据搬移
+      for (int i = head; i < tail; ++i) {
+        items[i-head] = items[i];
+      }
+      // 搬移完之后重新更新 head 和 tail
+      tail -= head;
+      head = 0;
+    }
+    
+    items[tail] = item;
+    ++tail;
+    return true;
+  }
+
+
+  // 出队
+  public String dequeue() {
+    // 如果 head == tail 表示队列为空
+    if (head == tail) return null;
+    // 为了让其他语言的同学看的更加明确，把 -- 操作放到单独一行来写了
+    String ret = items[head];
+    ++head;
+    return ret;
+  }
+}
+
+```
+
+基于链表的队列实现方法
+
+![linkedQueue](./imgs/linkedQueue.png)
+
+## 循环队列
+
+> 要想写出没有bug的循环队列的实现代码，关键是确定好队空和队满的判定条件
+
+队满时
+
+![queueFull](./imgs/queueFull.png)
+
+(tail+1) % n = head
+
+当队列满时，图中的 tail 指向的位置实际上是没有存储数据的。所以，循环队列会浪费一个数组的存储空间。
+
+```java
+public class CircularQueue {
+  // 数组：items，数组大小：n
+  private String[] items;
+  private int n = 0;
+  // head 表示队头下标，tail 表示队尾下标
+  private int head = 0;
+  private int tail = 0;
+
+  // 申请一个大小为 capacity 的数组
+  public CircularQueue(int capacity) {
+    items = new String[capacity];
+    n = capacity;
+  }
+
+  // 入队
+  public boolean enqueue(String item) {
+    // 队列满了
+    if ((tail + 1) % n == head) return false;
+    items[tail] = item;
+    tail = (tail + 1) % n;
+    return true;
+  }
+
+  // 出队
+  public String dequeue() {
+    // 如果 head == tail 表示队列为空
+    if (head == tail) return null;
+    String ret = items[head];
+    head = (head + 1) % n;
+    return ret;
+  }
+}
+
+```
+
+## 阻塞队列和并发队列
+
+> 阻塞队列其实就是在队列基础上增加了阻塞操作。简单来说，就是在队列为空的时候，从队头取数据会被阻塞。因为此时还没有数据可取，直到队列中有了数据才能返回；如果队列已经满了，那么插入数据的操作就会被阻塞，直到队列中有空闲位置后再插入数据，然后再返回。
+
+生产者-消费者模型
+
+![blockingQueue](./imgs/blockingQueue.png)
+
+线程安全的队列我们叫作并发队列。最简单直接的实现方式是直接在 enqueue()、dequeue() 方法上加锁，但是锁粒度大并发度会比较低，同一时刻仅允许一个存或者取操作。实际上，基于数组的循环队列，利用 CAS 原子操作，可以实现非常高效的并发队列。这也是循环队列比链式队列应用更加广泛的原因。
+
+## 线程池
+
+实际上，对于大部分资源有限的场景，当没有空闲资源时，基本上都可以通过“队列”这种数据结构来实现请求排队。
+
+<h1 id="recursion">递归</h1>
+
+## 递归需要满足的三个条件
+
+1. 一个问题的解可以分解为几个子问题的解
+2. 这个问题与分解之后的子问题，除了数据规模不同，求解思路完全一样
+3. 存在递归终止条件
+
+## 如何编写递归代码
+
+> 关键是写出递推公式，找到终止条件
+
+
 
 
 
