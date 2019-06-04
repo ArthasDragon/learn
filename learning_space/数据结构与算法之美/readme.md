@@ -713,6 +713,7 @@ public void bubbleSort(int[] a, int n) {
 
 ![insertionSort](./imgs/insertionSort.png)
 
+也包含两种操作：元素的比较、元素的移动
 
 
 
