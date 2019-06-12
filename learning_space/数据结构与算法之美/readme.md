@@ -9,6 +9,7 @@
 - [排序](#sort)
 - [线性排序](#lineSort)
 - [二分查找](#binarySearch)
+- [跳表](#skipList)
 
 <h1 id="complexity">复杂度分析</h1>
 
@@ -1083,6 +1084,179 @@ public void countingSort(int[] a, int n) {
 用大 O 标记法表示时间复杂度的时候，会省略掉常数、系数和低阶。对于常量级时间复杂度的算法来说，O(1) 有可能表示的是一个非常大的常量值，比如 O(1000)、O(10000)。所以，常量级时间复杂度的算法有时候可能还没有 O(logn) 的算法执行效率高。
 
 ## 二分查找的递归与非递归实现
+
+有序数组中不存在重复元素
+
+```java
+public int bsearch(int[] a, int n, int value) {
+  int low = 0;
+  int high = n - 1;
+
+  while (low <= high) {
+    int mid = low+((high-low)>>1);
+    if (a[mid] == value) {
+      return mid;
+    } else if (a[mid] < value) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+  return -1;
+}
+```
+
+```java
+// 二分查找的递归实现
+public int bsearch(int[] a, int n, int val) {
+  return bsearchInternally(a, 0, n - 1, val);
+}
+
+private int bsearchInternally(int[] a, int low, int high, int value) {
+  if (low > high) return -1;
+
+  int mid =  low + ((high - low) >> 1);
+  if (a[mid] == value) {
+    return mid;
+  } else if (a[mid] < value) {
+    return bsearchInternally(a, mid+1, high, value);
+  } else {
+    return bsearchInternally(a, low, mid-1, value);
+  }
+}
+```
+
+## 二分查找应用场景的局限性
+
+首先，二分查找依赖的是顺序表结构，简单点说就是数组。
+
+其次，二分查找针对的是有序数据。
+
+二分查找只能用在插入、删除操作不频繁，一次排序多次查找的场景中。针对动态变化的数据集合，二分查找将不再适用。那针对动态数据集合，如何在其中快速查找某个数据呢？别急，等到二叉树会详细讲。
+
+再次，数据量太小不适合二分查找。
+
+不过，这里有一个例外。如果数据之间的比较操作非常耗时，不管数据量大小，都推荐使用二分查找。比如，数组中存储的都是长度超过 300 的字符串，如此长的两个字符串之间比对大小，就会非常耗时。我们需要尽可能地减少比较次数，而比较次数的减少会大大提高性能，这个时候二分查找就比顺序遍历更有优势。
+
+最后，数据量太大也不适合二分查找。
+
+## 二分查找的变形问题
+
+![moreBinarySearch](./imgs/moreBinarySearch.png)
+
+### 变体一：查找第一个值等于给定值的元素
+
+```java
+public int bsearch(int[] a, int n, int value) {
+  int low = 0;
+  int high = n - 1;
+  while (low <= high) {
+    int mid = low + ((high - low) >> 1);
+    if (a[mid] >= value) {
+      high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+
+  if (low < n && a[low]==value) return low;
+  else return -1;
+}
+```
+
+### 变体二：查找最后一个值等于给定值的元素
+
+```java
+public int bsearch(int[] a, int n, int value) {
+  int low = 0;
+  int high = n - 1;
+  while (low <= high) {
+    int mid =  low + ((high - low) >> 1);
+    if (a[mid] > value) {
+      high = mid - 1;
+    } else if (a[mid] < value) {
+      low = mid + 1;
+    } else {
+      if ((mid == n - 1) || (a[mid + 1] != value)) return mid;
+      else low = mid + 1;
+    }
+  }
+  return -1;
+}
+```
+
+### 变体三：查找第一个大于等于给定值的元素
+
+```java
+public int bsearch(int[] a, int n, int value) {
+  int low = 0;
+  int high = n - 1;
+  while (low <= high) {
+    int mid =  low + ((high - low) >> 1);
+    if (a[mid] >= value) {
+      if ((mid == 0) || (a[mid - 1] < value)) return mid;
+      else high = mid - 1;
+    } else {
+      low = mid + 1;
+    }
+  }
+  return -1;
+}
+```
+
+### 变体四：查找最后一个小于等于给定值的元素
+
+```java
+public int bsearch7(int[] a, int n, int value) {
+  int low = 0;
+  int high = n - 1;
+  while (low <= high) {
+    int mid =  low + ((high - low) >> 1);
+    if (a[mid] > value) {
+      high = mid - 1;
+    } else {
+      if ((mid == n - 1) || (a[mid + 1] > value)) return mid;
+      else low = mid + 1;
+    }
+  }
+  return -1;
+}
+```
+
+容易出错的细节有：<strong>终止条件、区间上下界更新方法、返回值选择</strong>
+
+<h1 id="skipList">跳表</h1>
+
+对于一个单链表来讲，即便链表中存储的数据是有序的，如果我们要想在其中查找某个数据，也只能从头到尾遍历链表。这样查找效率就会很低，时间复杂度会很高，是 O(n)。
+
+![preLinkedList](./imgs/preLinkedList.png)
+
+那怎么来提高查找效率呢？如果像图中那样，对链表建立一级“索引”，查找起来是不是就会更快一些呢？每两个结点提取一个结点到上一级，我们把抽出来的那一级叫作索引或索引层。你可以看下图。图中的 down 表示 down 指针，指向下一级结点。
+
+![skipList](./imgs/skipList.png)
+
+## 用跳表查询到底有多快？
+
+每两个结点会抽出一个结点作为上一级索引的结点，那第一级索引的结点个数大约就是 n/2，第二级索引的结点个数大约就是 n/4，第三级索引的结点个数大约就是 n/8，依次类推，也就是说，第 k 级索引的结点个数是第 k-1 级索引的结点个数的 1/2，那第 k级索引结点的个数就是 n/(2<sup>k</sup>)。
+
+n-1。如果包含原始链表这一层，整个跳表的高度就是 log<sub>2</sub>n。在跳表中查询某个数据的时候，每一层都要遍历3个结点。所以在跳表中查询任意数据的时间复杂度就是O(logn)。
+
+这个查找的时间复杂度跟二分查找是一样的。换句话说，我们其实是基于单链表实现了二分查找，是不是很神奇？不过，天下没有免费的午餐，这种查询效率的提升，前提是建立了很多级索引，<strong>空间换时间</strong>。
+
+## 跳表是不是很浪费内存？
+
+跳表的空间复杂度分析并不难，我在前面说了，假设原始链表大小为 n，那第一级索引大约有 n/2 个结点，第二级索引大约有 n/4 个结点，以此类推，每上升一级就减少一半，直到剩下 2 个结点。如果我们把每层索引的结点数写出来，就是一个等比数列。
+
+这几级索引的结点总和就是 n/2+n/4+n/8…+8+4+2=n-2。所以，跳表的空间复杂度是 O(n)。也就是说，如果将包含 n 个结点的单链表构造成跳表，我们需要额外再用接近 n 个结点的存储空间。那我们有没有办法降低索引占用的内存空间呢？
+
+如果每三个结点或五个结点，抽一个结点到上级索引，是不是就不用那么多索引结点了呢？画了一个每三个结点抽一个的示意图，你可以看下。
+
+![threePotSkipList](./imgs/threePotSkipList.png)
+
+通过等比数列求和公式，总的索引结点大约就是 n/3+n/9+n/27+…+9+3+1=n/2。尽管空间复杂度还是 O(n)，但比上面的每两个结点抽一个结点的索引构建方法，要减少了一半的索引结点存储空间。
+
+实际上，在软件开发中，我们不必太在意索引占用的额外空间。在讲数据结构和算法时，我们习惯性地把要处理的数据看成整数，但是在实际的软件开发中，原始链表中存储的有可能是很大的对象，而索引结点只需要存储关键值和几个指针，并不需要存储对象，所以当对象比索引结点大很多时，那索引占用的额外空间就可以忽略了。
+
 
 
 
