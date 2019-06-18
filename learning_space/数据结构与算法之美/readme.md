@@ -2260,6 +2260,69 @@ n + n*(n-1) + n*(n-1)*(n-2) +... + n*(n-1)*(n-2)*...*2*1
 
 所以时间复杂度大于 O(n!)，小于 O(n*n!)，是非常高的。
 
+## 堆（特殊的树）
+
+### 如何理解堆？
+
+什么样的树是一个堆
+
+- 堆是一个完全二叉树
+- 堆中每一个节点的值都必须大于等于（或小于等于）其子树中每个节点的值。
+
+对于每个节点的值都大于等于子树中每个节点值的堆，我们叫作“大顶堆”。对于每个节点的值都小于等于子树中每个节点值的堆，我们叫作“小顶堆”。
+
+![heap](./imgs/heap.png)
+
+第一个和第二个是大顶推，第三个是小顶堆，第四个不是堆。对于同一组数据，可以构建多种不同形态的堆。
+
+### 如何实现一个堆？
+
+先要知道，堆都支持哪些操作以及如何存储一个堆。
+
+用数组存储堆的例子：
+
+![heapArray](./imgs/heapArray.png)
+
+堆上的操作（大顶堆为例）：
+
+1. 往堆中插入一个元素
+
+不能单纯的放到堆的最后，需要让其重新满足堆的特性，起名堆化过程。
+
+堆化：从下往上和从上往下。先看从下往上：
+
+![downToUpHeapify](./imgs/downToUpHeapify.png)
+
+堆化非常简单，就是顺着节点所在的路径，向上或者向下，对比，然后交换。
+
+![heapifySplit](./imgs/heapifySplit.png)
+
+```java
+public class Heap {
+  private int[] a; // 数组，从下标 1 开始存储数据
+  private int n;  // 堆可以存储的最大数据个数
+  private int count; // 堆中已经存储的数据个数
+
+  public Heap(int capacity) {
+    a = new int[capacity + 1];
+    n = capacity;
+    count = 0;
+  }
+
+  public void insert(int data) {
+    if (count >= n) return; // 堆满了
+    ++count;
+    a[count] = data;
+    int i = count;
+    while (i/2 > 0 && a[i] > a[i/2]) { // 自下往上堆化
+      swap(a, i, i/2); // swap() 函数作用：交换下标为 i 和 i/2 的两个元素
+      i = i/2;
+    }
+  }
+ }
+```
+
+2. 删除堆顶元素
 
 
 
