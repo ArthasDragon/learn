@@ -3846,6 +3846,50 @@ public void f(int i, int cw, int cv) { // 调用 f(0, 0, 0)
 }
 ```
 
+针对上面的代码，我们还是照例画出递归树。在递归树中，每个节点表示一个状态。现在我们需要 3 个变量（i, cw, cv）来表示一个状态。其中，i 表示即将要决策第 i 个物品是否装入背包，cw 表示当前背包中物品的总重量，cv 表示当前背包中物品的总价值。
+
+![backTrackBag1](./imgs/backTrackBag1.png)
+
+动态规划方法
+
+我们用一个二维数组 states[n][w+1]，来记录每层可以达到的不同状态。不过这里数组存储的值不再是 boolean 类型的了，而是当前状态对应的最大总价值。我们把每一层中 (i, cw) 重复的状态（节点）合并，只记录 cv 值最大的那个状态，然后基于这些状态来推导下一层的状态。
+
+```java
+public static int knapsack3(int[] weight, int[] value, int n, int w) {
+  int[][] states = new int[n][w+1];
+  for (int i = 0; i < n; ++i) { // 初始化 states
+    for (int j = 0; j < w+1; ++j) {
+      states[i][j] = -1;
+    }
+  }
+  states[0][0] = 0;
+  if (weight[0] <= w) {
+    states[0][weight[0]] = value[0];
+  }
+  for (int i = 1; i < n; ++i) { // 动态规划，状态转移
+    for (int j = 0; j <= w; ++j) { // 不选择第 i 个物品
+      if (states[i-1][j] >= 0) states[i][j] = states[i-1][j];
+    }
+    for (int j = 0; j <= w-weight[i]; ++j) { // 选择第 i 个物品
+      if (states[i-1][j] >= 0) {
+        int v = states[i-1][j] + value[i];
+        if (v > states[i][j+weight[i]]) {
+          states[i][j+weight[i]] = v;
+        }
+      }
+    }
+  }
+  // 找出最大值
+  int maxvalue = -1;
+  for (int j = 0; j <= w; ++j) {
+    if (states[n-1][j] > maxvalue) maxvalue = states[n-1][j];
+  }
+  return maxvalue;
+}
+```
+
+关于这个问题的时间、空间复杂度的分析，跟上一个例子大同小异，就不赘述了。时间复杂度是 O(n*w)，空间复杂度也是 O(n*w)。跟上一个例子类似，空间复杂度也是可以优化的，你可以自己写一下。
+
 
 
 
