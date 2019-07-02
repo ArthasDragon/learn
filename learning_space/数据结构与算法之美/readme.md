@@ -25,6 +25,7 @@
   - [回溯算法](#backTrack)
   - [动态规划](#dynamicProgramming)
 - [拓扑排序](#topologicalSort)
+- [最短路径](#shortestPath)
 
 
 
@@ -4380,6 +4381,7 @@ long findRootReferrerId(long actorId) {
   return findRootReferrerId(referrerId);
 }
 ```
+<h1 id="shortestPath">最短路径</h1>
 
 
 
