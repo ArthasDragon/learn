@@ -24,6 +24,8 @@
   - [分治算法](#divideAndConquer)
   - [回溯算法](#backTrack)
   - [动态规划](#dynamicProgramming)
+- [拓扑排序](#topologicalSort)
+
 
 
 
@@ -4170,6 +4172,72 @@ private int min(int x, int y, int z) {
   return minv;
 }
 ```
+
+当我们拿到一个问题的时候，我们可以先不思考，计算机会如何实现这个问题，而是单纯考虑“人脑”会如何去解决这个问题。人脑比较倾向于思考具象化的、摸得着看得见的东西，不适合思考过于抽象的问题。所以，我们需要把抽象问题具象化。那如何具象化呢？我们可以实例化几个测试数据，通过人脑去分析具体实例的解，然后总结规律，再尝试套用学过的算法，看是否能够解决。
+
+### 如何编程计算最长公共子串长度？
+
+这个问题的解决思路，跟莱文斯坦距离的解决思路非常相似，也可以用动态规划解决。我刚刚已经详细讲解了莱文斯坦距离的动态规划解决思路，所以，针对这个问题，我直接定义状态，然后写状态转移方程。
+
+每个状态还是包括三个变量 (i, j, max_lcs)，max_lcs 表示 a[0…i] 和 b[0…j] 的最长公共子串长度。那 (i, j) 这个状态都是由哪些状态转移过来的呢？
+
+我们先来看回溯的处理思路。我们从 a[0] 和 b[0] 开始，依次考察两个字符串中的字符是否匹配。
+
+- 如果 a[i] 与 b[j] 互相匹配，我们将最大公共子串长度加一，并且继续考察 a[i+1] 和 b[j+1]。
+- 如果 a[i] 与 b[j] 不匹配，最长公共子串长度不变，这个时候，有两个不同的决策路线：
+- 删除 a[i]，或者在 b[j] 前面加上一个字符 a[i]，然后继续考察 a[i+1] 和 b[j]；
+- 删除 b[j]，或者在 a[i] 前面加上一个字符 b[j]，然后继续考察 a[i] 和 b[j+1]。
+
+反过来也就是说，如果我们要求 a[0…i] 和 b[0…j] 的最长公共长度 max_lcs(i, j)，我们只有可能通过下面三个状态转移过来：
+
+- (i-1, j-1, max_lcs)，其中 max_lcs 表示 a[0…i-1] 和 b[0…j-1] 的最长公共子串长度；
+- (i-1, j, max_lcs)，其中 max_lcs 表示 a[0…i-1] 和 b[0…j] 的最长公共子串长度；
+- (i, j-1, max_lcs)，其中 max_lcs 表示 a[0…i] 和 b[0…j-1] 的最长公共子串长度。
+
+```java
+如果：a[i]==b[j]，那么：max_lcs(i, j) 就等于：
+max(max_lcs(i-1,j-1)+1, max_lcs(i-1, j), max_lcs(i, j-1))；
+
+如果：a[i]!=b[j]，那么：max_lcs(i, j) 就等于：
+max(max_lcs(i-1,j-1), max_lcs(i-1, j), max_lcs(i, j-1))；
+
+其中 max 表示求三数中的最大值。
+```
+
+```java
+public int lcs(char[] a, int n, char[] b, int m) {
+  int[][] maxlcs = new int[n][m];
+  for (int j = 0; j < m; ++j) {// 初始化第 0 行：a[0..0] 与 b[0..j] 的 maxlcs
+    if (a[0] == b[j]) maxlcs[0][j] = 1;
+    else if (j != 0) maxlcs[0][j] = maxlcs[0][j-1];
+    else maxlcs[0][j] = 0;
+  }
+  for (int i = 0; i < n; ++i) {// 初始化第 0 列：a[0..i] 与 b[0..0] 的 maxlcs
+    if (a[i] == b[0]) maxlcs[i][0] = 1;
+    else if (i != 0) maxlcs[i][0] = maxlcs[i-1][0];
+    else maxlcs[i][0] = 0;
+  }
+  for (int i = 1; i < n; ++i) { // 填表
+    for (int j = 1; j < m; ++j) {
+      if (a[i] == b[j]) maxlcs[i][j] = max(
+          maxlcs[i-1][j], maxlcs[i][j-1], maxlcs[i-1][j-1]+1);
+      else maxlcs[i][j] = max(
+          maxlcs[i-1][j], maxlcs[i][j-1], maxlcs[i-1][j-1]);
+    }
+  }
+  return maxlcs[n-1][m-1];
+}
+
+private int max(int x, int y, int z) {
+  int maxv = Integer.MIN_VALUE;
+  if (x > maxv) maxv = x;
+  if (y > maxv) maxv = y;
+  if (z > maxv) maxv = z;
+  return maxv;
+}
+```
+
+<h1 id="topologicalSort">拓扑排序</h1>
 
 
 
