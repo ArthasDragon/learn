@@ -4239,6 +4239,149 @@ private int max(int x, int y, int z) {
 
 <h1 id="topologicalSort">拓扑排序</h1>
 
+## 43 如何确定代码源文件的编译依赖关系？
+
+![topologicalSort1](./imgs/topologicalSort1.png)
+
+## 什么是拓扑排序
+
+我们在穿衣服的时候都有一定的顺序，我们可以把这种顺序想成，衣服与衣服之间有一定的依赖关系。比如说，你必须先穿袜子才能穿鞋，先穿内裤才能穿秋裤。假设我们现在有八件衣服要穿，它们之间的两两依赖关系我们已经很清楚了，那如何安排一个穿衣序列，能够满足所有的两两之间的依赖关系？
+
+这就是个拓扑排序问题。从这个例子中，你应该能想到，在很多时候，拓扑排序的序列并不是唯一的。你可以看我画的这幅图，我找到了好几种满足这些局部先后关系的穿衣序列。
+
+![topologicalSort2](./imgs/topologicalSort2.png)
+
+前面多次讲过，算法是构建在具体的数据结构之上的。针对这个问题，我们先来看下，如何将问题背景抽象成具体的数据结构？
+
+我们可以把源文件与源文件之间的依赖关系，抽象成一个有向图。每个源文件对应图中的一个顶点，源文件之间的依赖关系就是顶点之间的边。
+
+如果 a 先于 b 执行，也就是说 b 依赖于 a，那么就在顶点 a 和顶点 b 之间，构建一条从 a 指向 b 的边。而且，这个图不仅要是有向图，还要是一个有向无环图，也就是不能存在像 a->b->c->a 这样的循环依赖关系。因为图中一旦出现环，拓扑排序就无法工作了。实际上，拓扑排序本身就是基于有向无环图的一个算法。
+
+```java
+public class Graph {
+  private int v; // 顶点的个数
+  private LinkedList<Integer> adj[]; // 邻接表
+
+  public Graph(int v) {
+    this.v = v;
+    adj = new LinkedList[v];
+    for (int i=0; i<v; ++i) {
+      adj[i] = new LinkedList<>();
+    }
+  }
+
+  public void addEdge(int s, int t) { // s 先于 t，边 s->t
+    adj[s].add(t);
+  }
+}
+```
+
+拓扑排序有两种实现方法，都不难理解。它们分别是Kahn 算法和DFS 深度优先搜索算法。我们依次来看下它们都是怎么工作的。
+
+### 1.Kahn 算法
+
+定义数据结构的时候，如果 s 需要先于 t 执行，那就添加一条 s 指向 t 的边。所以，如果某个顶点入度为 0， 也就表示，没有任何顶点必须先于这个顶点执行，那么这个顶点就可以执行了。
+
+我们先从图中，找出一个入度为 0 的顶点，将其输出到拓扑排序的结果序列中（对应代码中就是把它打印出来），并且把这个顶点从图中删除（也就是把这个顶点可达的顶点的入度都减 1）。我们循环执行上面的过程，直到所有的顶点都被输出。最后输出的序列，就是满足局部依赖关系的拓扑排序。
+
+```java
+public void topoSortByKahn() {
+  int[] inDegree = new int[v]; // 统计每个顶点的入度
+  for (int i = 0; i < v; ++i) {
+    for (int j = 0; j < adj[i].size(); ++j) {
+      int w = adj[i].get(j); // i->w
+      inDegree[w]++;
+    }
+  }
+  LinkedList<Integer> queue = new LinkedList<>();
+  for (int i = 0; i < v; ++i) {
+    if (inDegree[i] == 0) queue.add(i);
+  }
+  while (!queue.isEmpty()) {
+    int i = queue.remove();
+    System.out.print("->" + i);
+    for (int j = 0; j < adj[i].size(); ++j) {
+      int k = adj[i].get(j);
+      inDegree[k]--;
+      if (inDegree[k] == 0) queue.add(k);
+    }
+  }
+}
+```
+
+### 2.DFS 算法
+
+图上的深度优先搜索我们前面已经讲过了，实际上，拓扑排序也可以用深度优先搜索来实现。不过这里的名字要稍微改下，更加确切的说法应该是深度优先遍历，遍历图中的所有顶点，而非只是搜索一个顶点到另一个顶点的路径。
+
+```java
+public void topoSortByDFS() {
+  // 先构建逆邻接表，边 s->t 表示，s 依赖于 t，t 先于 s
+  LinkedList<Integer> inverseAdj[] = new LinkedList[v];
+  for (int i = 0; i < v; ++i) { // 申请空间
+    inverseAdj[i] = new LinkedList<>();
+  }
+  for (int i = 0; i < v; ++i) { // 通过邻接表生成逆邻接表
+    for (int j = 0; j < adj[i].size(); ++j) {
+      int w = adj[i].get(j); // i->w
+      inverseAdj[w].add(i); // w->i
+    }
+  }
+  boolean[] visited = new boolean[v];
+  for (int i = 0; i < v; ++i) { // 深度优先遍历图
+    if (visited[i] == false) {
+      visited[i] = true;
+      dfs(i, inverseAdj, visited);
+    }
+  }
+}
+
+private void dfs(
+    int vertex, LinkedList<Integer> inverseAdj[], boolean[] visited) {
+  for (int i = 0; i < inverseAdj[vertex].size(); ++i) {
+    int w = inverseAdj[vertex].get(i);
+    if (visited[w] == true) continue;
+    visited[w] = true;
+    dfs(w, inverseAdj, visited);
+  } // 先把 vertex 这个顶点可达的所有顶点都打印出来之后，再打印它自己
+  System.out.print("->" + vertex);
+}
+```
+
+这个算法包含两个关键部分。
+
+第一部分是通过邻接表构造逆邻接表。邻接表中，边 s->t 表示 s 先于 t 执行，也就是 t 要依赖 s。在逆邻接表中，边 s->t 表示 s 依赖于 t，s 后于 t 执行。为什么这么转化呢？这个跟我们这个算法的实现思想有关。
+
+第二部分是这个算法的核心，也就是递归处理每个顶点。对于顶点 vertex 来说，我们先输出它可达的所有顶点，也就是说，先把它依赖的所有的顶点输出了，然后再输出自己。
+
+这两个算法的时间复杂度分别是多少呢？
+
+从 Kahn 代码中可以看出来，每个顶点被访问了一次，每个边也都被访问了一次，所以，Kahn 算法的时间复杂度就是 O(V+E)（V 表示顶点个数，E 表示边的个数）。
+
+DFS 算法的时间复杂度我们之前分析过。每个顶点被访问两次，每条边都被访问一次，所以时间复杂度也是 O(V+E)。
+
+## 总结
+
+拓扑排序应用非常广泛，解决的问题的模型也非常一致。凡是需要通过局部顺序来推导全局顺序的，一般都能用拓扑排序来解决。除此之外，拓扑排序还能检测图中环的存在。对于 Kahn 算法来说，如果最后输出出来的顶点个数，少于图中顶点个数，图中还有入度不是 0 的顶点，那就说明，图中存在环。
+
+那一节讲过一个例子，在查找最终推荐人的时候，可能会因为脏数据，造成存在循环推荐，比如，用户 A 推荐了用户 B，用户 B 推荐了用户 C，用户 C 又推荐了用户 A。如何避免这种脏数据导致的无限递归？
+
+实际上，这就是环的检测问题。因为我们每次都只是查找一个用户的最终推荐人，所以，我们并不需要动用复杂的拓扑排序算法，而只需要记录已经访问过的用户 ID，当用户 ID 第二次被访问的时候，就说明存在环，也就说明存在脏数据。
+
+```java
+HashSet<Integer> hashTable = new HashSet<>(); // 保存已经访问过的 actorId
+long findRootReferrerId(long actorId) {
+  if (hashTable.contains(actorId)) { // 存在环
+    return;
+  }
+  hashTable.add(actorId);
+  Long referrerId = 
+       select referrer_id from [table] where actor_id = actorId;
+  if (referrerId == null) return actorId;
+  return findRootReferrerId(referrerId);
+}
+```
+
+
 
 
 
