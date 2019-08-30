@@ -284,6 +284,7 @@ var ast = Expression(source);
 
 console.log(ast);
 
+//根据ast解释执行
 function evaluate(node) {
   if (node.type === "Expression") {
     return evaluate(node.children[0]);
