@@ -476,3 +476,70 @@ multiplicativeExpression
 上下文无关的意思是，无论在任何情况下，文法的推导规则都是一样的。比如，在变量声明语句中可能要用到一个算术表达式来做变量初始化，而在其他地方可能也会用到算术表达式。不管在什么地方，算术表达式的语法都一样，都允许用加法和乘法，计算优先级也不变。好在你见到的大多数计算机语言，都能用上下文无关文法来表达它的语法。
 
 那有没有上下文相关的情况需要处理呢？也是有的，但那不是语法分析阶段负责的，而是放在语义分析阶段来处理的。
+
+## 解析算术表达式：理解“递归”的含义
+
+我们之前的算法只算是用到了“下降”，没有涉及“递归”，现在，我们就来看看如何用递归的算法翻译递归的文法。
+
+我们先按照前面说的，把文法直观地翻译成算法。但是，我们遇到麻烦了。这个麻烦就是出现了无穷多次调用的情况。我们来看个例子。
+
+为了简单化，我们采用下面这个简化的文法，去掉了乘法的层次：
+
+```java
+additiveExpression
+    :   IntLiteral
+    |   additiveExpression Plus IntLiteral
+    ;
+```
+
+在解析 “2 + 3”这样一个最简单的加法表达式的时候，我们直观地将其翻译成算法，结果出现了如下的情况：
+
+- 首先匹配是不是整型字面量，发现不是；
+- 然后匹配是不是加法表达式，这里是递归调用；
+- 会重复上面两步，无穷无尽。
+
+“additiveExpression Plus multiplicativeExpression”这个文法规则的第一部分就递归地引用了自身，这种情况叫做**左递归。**通过上面的分析，我们知道左递归是递归下降算法无法处理的，这是递归下降算法最大的问题。
+
+怎么解决呢？把“additiveExpression”调换到加号后面怎么样？我们来试一试。
+
+```java
+additiveExpression
+    :   multiplicativeExpression
+    |   multiplicativeExpression Plus additiveExpression
+    ;
+```
+
+我们接着改写成算法，这个算法确实不会出现无限调用的问题：
+
+```java
+private SimpleASTNode additive(TokenReader tokens) throws Exception {
+    SimpleASTNode child1 = multiplicative();  // 计算第一个子节点
+    SimpleASTNode node = child1;  // 如果没有第二个子节点，就返回这个
+    Token token = tokens.peek();
+    if (child1 != null && token != null) {
+        if (token.getType() == TokenType.Plus) {
+            token = tokens.read();
+            SimpleASTNode child2 = additive(); // 递归地解析第二个节点
+            if (child2 != null) {
+                node = new SimpleASTNode(ASTNodeType.AdditiveExp, token.getText());
+                node.addChild(child1);
+                node.addChild(child2);
+            } else {
+                throw new Exception("invalid additive expression, expecting the right part.");
+            }
+        }
+    }
+    return node;
+}
+```
+
+> 我们先尝试能否匹配乘法表达式，如果不能，那么这个节点肯定不是加法节点，因为加法表达式的两个产生式都必须首先匹配乘法表达式。遇到这种情况，返回 null 就可以了，调用者就这次匹配没有成功。如果乘法表达式匹配成功，那就再尝试匹配加号右边的部分，也就是去递归地匹配加法表达式。如果匹配成功，就构造一个加法的 ASTNode 返回。
+
+同样的，乘法的文法规则也可以做类似的改写：
+
+```java
+multiplicativeExpression
+    :   IntLiteral
+    |   IntLiteral Star multiplicativeExpression
+    ;
+```
