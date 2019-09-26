@@ -349,3 +349,130 @@ IntLiteral  5
 <h1 id="grammaticalAnalysis1">语法分析（一）：纯手工打造公式计算器</h1>
 
 本节课将继续“手工打造”之旅，让你纯手工实现一个公式计算器，借此掌握**语法分析的原理**和**递归下降算法（Recursive Descent Parsing），并初步了解上下文无关文法（Context-free Grammar，CFG）。**
+
+所举例的公式计算器支持加减乘除算术运算，比如支持“2 + 3 \* 5”的运算。
+
+在学习语法分析时，我们习惯把上面的公式称为表达式。这个表达式看上去很简单，但你能借此学到很多语法分析的原理，例如左递归、优先级和结合性等问题。
+
+## 解析变量声明语句：理解“下降”的含义
+
+语法分析的结果是生成 AST。算法分为自顶向下和自底向上算法，其中，递归下降算法是一种常见的自顶向下算法。
+
+我们首先把变量声明语句的规则，用形式化的方法表达一下。它的左边是一个非终结符（Non-terminal）。右边是它的产生式（Production Rule）。在语法解析的过程中，左边会被右边替代。如果替代之后还有非终结符，那么继续这个替代过程，直到最后全部都是终结符（Terminal），也就是 Token。只有终结符才可以成为 AST 的叶子节点。这个过程，也叫做推导（Derivation）过程：
+
+```
+intDeclaration : Int Identifier ('=' additiveExpression)?;
+```
+
+你可以看到，int 类型变量的声明，需要有一个 Int 型的 Token，加一个变量标识符，后面跟一个可选的赋值表达式。我们把上面的文法翻译成程序语句，伪代码如下：
+
+```java
+// 伪代码
+MatchIntDeclare(){
+  MatchToken(Int)；        // 匹配 Int 关键字
+  MatchIdentifier();       // 匹配标识符
+  MatchToken(equal);       // 匹配等号
+  MatchExpression();       // 匹配表达式
+}
+```
+
+实际代码在 SimpleCalculator.java 类的 IntDeclare() 方法中：
+
+```java
+SimpleASTNode node = null;
+Token token = tokens.peek();    // 预读
+if (token != null && token.getType() == TokenType.Int) {   // 匹配 Int
+    token = tokens.read();      // 消耗掉 int
+    if (tokens.peek().getType() == TokenType.Identifier) { // 匹配标识符
+        token = tokens.read();  // 消耗掉标识符
+        // 创建当前节点，并把变量名记到 AST 节点的文本值中，
+        // 这里新建一个变量子节点也是可以的
+        node = new SimpleASTNode(ASTNodeType.IntDeclaration, token.getText());
+        token = tokens.peek();  // 预读
+        if (token != null && token.getType() == TokenType.Assignment) {
+            tokens.read();      // 消耗掉等号
+            SimpleASTNode child = additive(tokens);  // 匹配一个表达式
+            if (child == null) {
+                throw new Exception("invalide variable initialization, expecting an expression");
+            }
+            else{
+                node.addChild(child);
+            }
+        }
+    } else {
+        throw new Exception("variable name expected");
+    }
+}
+```
+
+直白地描述一下上面的算法：
+
+> 解析变量声明语句时，我先看第一个 Token 是不是 int。如果是，那我创建一个 AST 节点，记下 int 后面的变量名称，然后再看后面是不是跟了初始化部分，也就是等号加一个表达式。我们检查一下有没有等号，有的话，接着再匹配一个表达式。
+
+另外，从上面的代码中我们看到，程序是从一个 Token 的流中顺序读取。代码中的 peek() 方法是预读，只是读取下一个 Token，但并不把它从 Token 流中移除。在代码中，我们用 peek() 方法可以预先看一下下一个 Token 是否是等号，从而知道后面跟着的是不是一个表达式。而 read() 方法会从 Token 流中移除，下一个 Token 变成了当前的 Token。
+
+这里需要注意的是，通过 peek() 方法来预读，实际上是对代码的优化，这有点儿预测的意味。我们后面会讲带有预测的自顶向下算法，它能减少回溯的次数。
+
+我们把解析变量声明语句和表达式的算法分别写成函数。在语法分析的时候，调用这些函数跟后面的 Token 串做模式匹配。匹配上了，就返回一个 AST 节点，否则就返回 null。如果中间发现跟语法规则不符，就报编译错误。
+
+在这个过程中，上级文法嵌套下级文法，上级的算法调用下级的算法。表现在生成 AST 中，上级算法生成上级节点，下级算法生成下级节点。**这就是“下降”的含义。**
+
+**程序结构基本上是跟文法规则同构的。这就是递归下降算法的优点，非常直观。**
+
+接着说回来，我们继续运行这个示例程序，输出 AST：
+
+```java
+Programm Calculator
+    IntDeclaration age
+        AssignmentExp =
+            IntLiteral 45
+```
+
+前面的文法和算法都很简单，这样级别的文法没有超出正则文法。也就是说，并没有超出我们做词法分析时用到的文法。
+
+## 用上下文无关文法描述算术表达式
+
+我们解析算术表达式的时候，会遇到更复杂的情况，这时，正则文法不够用，我们必须用上下文无关文法来表达。
+
+算术表达式要包含加法和乘法两种运算（简单起见，我们把减法与加法等同看待，把除法也跟乘法等同看待），加法和乘法运算有不同的优先级。我们的规则要能匹配各种可能的算术表达式：
+
+- 2+3\*5
+- 2\*3+5
+- 2\*3
+- ......
+
+思考一番之后，我们把规则分成两级：第一级是加法规则，第二级是乘法规则。把乘法规则作为加法规则的子规则，这样在解析形成 AST 时，乘法节点就一定是加法节点的子节点，从而被优先计算。
+
+```java
+additiveExpression
+    :   multiplicativeExpression
+    |   additiveExpression Plus multiplicativeExpression
+    ;
+
+multiplicativeExpression
+    :   IntLiteral
+    |   multiplicativeExpression Star IntLiteral
+    ;
+```
+
+你看，我们可以通过文法的嵌套，实现对运算优先级的支持。这样我们在解析“2 + 3 \* 5”这个算术表达式时会形成类似下面的 AST：
+
+![gramAnalysis-1](./imgs/gramAnalysis-1.png)
+
+如果要计算表达式的值，只需要对根节点求值就可以了。为了完成对根节点的求值，需要对下级节点递归求值，所以我们先完成“3 \* 5 = 15”，然后再计算“2 + 15 = 17”。
+
+应该注意的是，加法规则中还递归地又引用了加法规则。通过这种递归的定义，我们能展开、形成所有各种可能的算术表达式。比如“2+3\*5” 的推导过程：
+
+```java
+-->additiveExpression + multiplicativeExpression
+-->multiplicativeExpression + multiplicativeExpression
+-->IntLiteral + multiplicativeExpression
+-->IntLiteral + multiplicativeExpression * IntLiteral
+-->IntLiteral + IntLiteral * IntLiteral
+```
+
+这种文法已经没有办法改写成正则文法了，它比正则文法的表达能力更强，叫做<strong>“上下文无关文法”。</strong>正则文法是上下文无关文法的一个子集。它们的区别呢，就是上下文无关文法允许递归调用，而正则文法不允许。
+
+上下文无关的意思是，无论在任何情况下，文法的推导规则都是一样的。比如，在变量声明语句中可能要用到一个算术表达式来做变量初始化，而在其他地方可能也会用到算术表达式。不管在什么地方，算术表达式的语法都一样，都允许用加法和乘法，计算优先级也不变。好在你见到的大多数计算机语言，都能用上下文无关文法来表达它的语法。
+
+那有没有上下文相关的情况需要处理呢？也是有的，但那不是语法分析阶段负责的，而是放在语义分析阶段来处理的。
