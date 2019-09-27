@@ -727,3 +727,47 @@ while(next token is +){
   createAddNode
 }
 ```
+
+我们扩展一下话题。在研究递归函数的时候，有一个概念叫做**尾递归，**尾递归函数的最后一句是递归地调用自身。
+
+编译程序通常都会把尾递归转化为一个循环语句，使用的原理跟上面的伪代码是一样的。相对于递归调用来说，循环语句对系统资源的开销更低，因此，把尾递归转化为循环语句也是一种编译优化技术。
+
+好了，我们继续左递归的话题。现在我们知道怎么写这种左递归的算法了，大概是下面的样子：
+
+```java
+private SimpleASTNode additive(TokenReader tokens) throws Exception {
+    SimpleASTNode child1 = multiplicative(tokens);  // 应用 add 规则
+    SimpleASTNode node = child1;
+    if (child1 != null) {
+        while (true) {                              // 循环应用 add'
+            Token token = tokens.peek();
+            if (token != null && (token.getType() == TokenType.Plus || token.getType() == TokenType.Minus)) {
+                token = tokens.read();              // 读出加号
+                SimpleASTNode child2 = multiplicative(tokens);  // 计算下级节点
+                node = new SimpleASTNode(ASTNodeType.Additive, token.getText());
+                node.addChild(child1);              // 注意，新节点在顶层，保证正确的结合性
+                node.addChild(child2);
+                child1 = node;
+            } else {
+                break;
+            }
+        }
+    }
+    return node;
+}
+```
+
+修改完后，再次运行语法分析器分析“2+3+4+5”，会得到正确的 AST：
+
+```java
+Programm Calculator
+    AdditiveExp +
+        AdditiveExp +
+            AdditiveExp +
+                IntLiteral 2
+                IntLiteral 3
+            IntLiteral 4
+        IntLiteral 5
+```
+
+## 小结
