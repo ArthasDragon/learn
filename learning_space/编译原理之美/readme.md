@@ -1168,3 +1168,85 @@ fragment HexDigit
 这跟我们当时构造有限自动机做词法分析是一样的。那时，我们先判断是不是关键字，如果不是关键字，才识别为标识符。而在 Antlr 里，仅仅通过声明的顺序就解决了这个问题，省了很多事儿啊！
 
 ## 用 Antlr 生成语法分析器
+
+这一次的文件名叫做 PlayScript.g4。playscript 是为我们的脚本语言起的名称，文件开头是这样的：
+
+```
+grammar PlayScript;
+import CommonLexer;   // 导入词法定义
+
+/* 下面的内容加到所生成的 Java 源文件的头部，如包名称，import 语句等。*/
+@header {
+package antlrtest;
+}
+```
+
+然后把之前做过的语法定义放进去。Antlr 内部有自动处理左递归的机制，你可以放心大胆地把语法规则写成下面的样子：
+
+```
+expression
+    :   assignmentExpression
+    |   expression ',' assignmentExpression
+    ;
+
+assignmentExpression
+    :   additiveExpression
+    |   Identifier assignmentOperator additiveExpression
+    ;
+
+assignmentOperator
+    :   '='
+    |   '*='
+    |	'/='
+    |   '%='
+    |   '+='
+    |   '-='
+    ;
+
+additiveExpression
+    :   multiplicativeExpression
+    |   additiveExpression '+' multiplicativeExpression
+    |   additiveExpression '-' multiplicativeExpression
+    ;
+
+multiplicativeExpression
+    :   primaryExpression
+    |   multiplicativeExpression '*' primaryExpression
+    |   multiplicativeExpression '/' primaryExpression
+    |   multiplicativeExpression '%' primaryExpression
+    ;
+```
+
+我们继续运行下面的命令，生成语法分析器：
+
+```
+antlr PlayScript.g4
+javac antlrtest/*.java
+```
+
+然后测试一下生成的语法分析器：
+
+```
+grun antlrtest.PlayScript expression -gui
+```
+
+这个命令的意思是：测试 PlayScript 这个类的 expression 方法，也就是解析表达式的方法，结果用图形化界面显示。
+
+我们在控制台界面中输入下面的内容：
+
+```java
+age + 10 * 2  + 10
+^D
+```
+
+其中 ^D 是按下 Ctl 键的同时按下 D，相当于在终端输入一个 EOF 字符，即文件结束符号（Windows 操作系统要使用 ^Z）。当然，你也可以提前把这些语句放到文件中，把文件名作为命令参数。之后，语法分析器会分析这些语法，并弹出一个窗口来显示 AST：
+
+![frontendTool3](./imgs/frontendTool3.png)
+
+看得出来，AST 完全正确，优先级和结合性也都没错。所以，Antlr 生成的语法分析器还是很靠谱的。以后，你专注写语法规则就行了，可以把精力放在语言的设计和应用上。
+
+## 小结
+
+今天，我带你了解了 Antlr，并用 Antlr 生成了词法分析器和语法分析器。有了工具的支持，你可以把主要的精力放在编写词法和语法规则上，提升了工作效率。
+
+除此之外，借鉴了成熟的词法规则和语法规则。你可以将这些规则用到自己的语言设计中。采用工具和借鉴成熟规则十分重要，站在别人的肩膀上能让自己更快成长。
