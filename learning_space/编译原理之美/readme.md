@@ -1321,3 +1321,61 @@ Antlr 的这个语法实际上是把产生式的顺序赋予了额外的含义�
 到目前为止，我们彻底完成了表达式的语法工作，可以放心大胆地在脚本语言里使用各种表达式，把精力放在完善各类语句的语法工作上了。
 
 ## 完善各类语句（Statement）的语法
+
+我先带你分析一下 PlayScript.g4 文件中语句的规则：
+
+```
+statement
+    : blockLabel=block
+    | IF parExpression statement (ELSE statement)?
+    | FOR '(' forControl ')' statement
+    | WHILE parExpression statement
+    | DO statement WHILE parExpression ';'
+    | SWITCH parExpression '{' switchBlockStatementGroup* switchLabel* '}'
+    | RETURN expression? ';'
+    | BREAK IDENTIFIER? ';'
+    | SEMI
+    | statementExpression=expression ';'
+    ;
+```
+
+同表达式一样，一个 statement 规则就可以涵盖各类常用语句，包括 if 语句、for 循环语句、while 循环语句、switch 语句、return 语句等等。表达式后面加一个分号，也是一种语句，叫做表达式语句。
+
+从语法分析的难度来看，上面这些语句的语法比表达式的语法简单的多，左递归、优先级和结合性的问题这里都没有出现。这也算先难后易，苦尽甘来了吧。实际上，我们后面要设计的很多语法，都没有想象中那么复杂。
+
+## 1. 研究一下 if 语句
+
+在 C 和 Java 等语言中，if 语句通常写成下面的样子：
+
+```java
+if (condition)
+  做一件事情 ;
+else
+  做另一件事情 ;
+```
+
+但更多情况下，if 和 else 后面是花括号起止的一个语句块，比如：
+
+```java
+if (condition){
+  做一些事情；
+}
+else{
+  做另一些事情；
+}
+```
+
+它的语法规则是这样的：
+
+```
+statement :
+          ...
+          | IF parExpression statement (ELSE statement)?
+          ...
+          ;
+parExpression : '(' expression ')';
+```
+
+我们用了 IF 和 ELSE 这两个关键字，也复用了已经定义好的语句规则和表达式规则。你看，语句规则和表达式规则一旦设计完毕，就可以被其他语法规则复用，多么省心！
+
+但是 if 语句也有让人不省心的地方，比如会涉及到二义性文法问题。所以，接下来我们就借 if 语句，分析一下二义性文法这个现象。
