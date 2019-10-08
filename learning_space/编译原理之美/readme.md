@@ -1379,3 +1379,245 @@ parExpression : '(' expression ')';
 我们用了 IF 和 ELSE 这两个关键字，也复用了已经定义好的语句规则和表达式规则。你看，语句规则和表达式规则一旦设计完毕，就可以被其他语法规则复用，多么省心！
 
 但是 if 语句也有让人不省心的地方，比如会涉及到二义性文法问题。所以，接下来我们就借 if 语句，分析一下二义性文法这个现象。
+
+## 2. 解决二义性文法
+
+学计算机语言的时候，提到 if 语句，会特别提一下嵌套 if 语句和悬挂 else 的情况，比如下面这段代码：
+
+```java
+if (a > b)
+if (c > d)
+做一些事情；
+else
+做另外一些事情；
+```
+
+在上面的代码中，我故意取消了代码的缩进。那么，你能不能看出 else 是跟哪个 if 配对的呢？
+
+一旦你语法规则写得不够好，就很可能形成二义性，也就是用同一个语法规则可以推导出两个不同的句子，或者说生成两个不同的 AST。这种文法叫做二义性文法，比如下面这种写法：
+
+```
+stmt -> if expr stmt
+      | if expr stmt else stmt
+      | other
+```
+
+按照这个语法规则，先采用第一条产生式推导或先采用第二条产生式推导，会得到不同的 AST。左边的这棵 AST 中，else 跟第二个 if 配对；右边的这棵 AST 中，else 跟第一个 if 配对。
+
+![frontendTool4](./imgs/frontendTool4.png)
+
+大多数高级语言在解析这个示例代码时都会产生第一个 AST，即 else 跟最邻近的 if 配对，也就是下面这段带缩进的代码表达的意思：
+
+```
+if (a > b)
+  if (c > d)
+    做一些事情；
+  else
+    做另外一些事情；
+```
+
+那么，有没有办法把语法写成没有二义性的呢？当然有了。
+
+```
+stmt -> fullyMatchedStmt | partlyMatchedStmt
+fullyMatchedStmt -> if expr fullyMatchedStmt else fullyMatchedStmt
+                   | other
+partlyMatchedStmt -> if expr stmt
+                   | if expr fullyMatchedStmt else partlyMatchedStmt
+```
+
+按照上面的语法规则，只有唯一的推导方式，也只能生成唯一的 AST：
+
+![frontendTool5](./imgs/frontendTool5.png)
+
+其中，解析第一个 if 语句时只能应用 partlyMatchedStmt 规则，解析第二个 if 语句时，只能适用 fullyMatchedStmt 规则。
+
+这时，我们就知道可以通过改写语法规则来解决二义性文法。至于怎么改写规则，确实不像左递归那样有清晰的套路，但是可以多借鉴成熟的经验。
+
+再说回我们给 Antlr 定义的语法，这个语法似乎并不复杂，怎么就能确保不出现二义性问题呢？因为 Antlr 解析语法时用到的是 LL 算法。
+
+LL 算法是一个深度优先的算法，所以在解析到第一个 statement 时，就会建立下一级的 if 节点，在下一级节点里会把 else 子句解析掉。如果 Antlr 不用 LL 算法，就会产生二义性。这再次验证了我们前面说的那个知识点：文法要经常和解析算法配合。
+
+## 3. 研究一下 for 语句
+
+for 语句一般写成下面的样子：
+
+```java
+for (int i = 0; i < 10; i++){
+  println(i);
+}
+```
+
+相关的语法规则如下：
+
+```
+statement :
+         ...
+          | FOR '(' forControl ')' statement
+         ...
+          ;
+
+forControl
+          : forInit? ';' expression? ';' forUpdate=expressionList?
+          ;
+
+forInit
+          : variableDeclarators
+          | expressionList
+          ;
+
+expressionList
+          : expression (',' expression)*
+          ;
+```
+
+从上面的语法规则中看到，for 语句归根到底是由语句、表达式和变量声明构成的。代码中的 for 语句，解析后形成的 AST 如下：
+
+![frontendTool6](./imgs/frontendTool6.png)
+
+熟悉了 for 语句的语法之后，我想提一下语句块（block）。在 if 语句和 for 语句中，会用到它，所以我捎带着把语句块的语法构成写了一下，供你参考：
+
+```
+block
+    : '{' blockStatements '}'
+    ;
+
+blockStatements
+    : blockStatement*
+    ;
+
+blockStatement
+    : variableDeclarators ';'     // 变量声明
+    | statement
+    | functionDeclaration         // 函数声明
+    | classDeclaration            // 类声明
+    ;
+```
+
+现在，我们已经拥有了一个相当不错的语法体系，除了要放到后面去讲的函数、类有关的语法之外，我们几乎完成了 playscript 的所有的语法设计工作。接下来，我们再升级一下脚本解释器，让它能够支持更多的语法，同时通过使用 Visitor 模式，让代码结构更加完善。
+
+## 用 Vistor 模式升级脚本解释器
+
+我们在纯手工编写的脚本语言解释器里，用了一个 evaluate() 方法自上而下地遍历了整棵树。随着要处理的语法越来越多，这个方法的代码量会越来越大，不便于维护。而 Visitor 设计模式针对每一种 AST 节点，都会有一个单独的方法来负责处理，能够让代码更清晰，也更便于维护。
+
+Antlr 能帮我们生成一个 Visitor 处理模式的框架，我们在命令行输入：
+
+```
+antlr -visitor PlayScript.g4
+```
+
+-visitor 参数告诉 Antlr 生成下面两个接口和类：
+
+```java
+public interface PlayScriptVisitor<T> extends ParseTreeVisitor<T> {...}
+
+public class PlayScriptBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements PlayScriptVisitor<T> {...}
+```
+
+在 PlayScriptBaseVisitor 中，可以看到很多 visitXXX() 这样的方法，每一种 AST 节点都对应一个方法，例如：
+
+```java
+@Override public T visitPrimitiveType(PlayScriptParser.PrimitiveTypeContext ctx) {...}
+```
+
+其中泛型 < T > 指的是访问每个节点时返回的数据的类型。在我们手工编写的版本里，当时只处理整数，所以返回值一律用 Integer，现在我们实现的版本要高级一点，AST 节点可能返回各种类型的数据，比如：
+
+- 浮点型运算的时候，会返回浮点数；
+- 字符类型运算的时候，会返回字符型数据；
+- 还可能是程序员自己设计的类型，如某个类的实例。
+
+所以，我们就让 Visitor 统一返回 Object 类型好了，能够适用于各种情况。这样，我们的 Visitor 就是下面的样子（泛型采用了 Object）：
+
+```java
+public class MyVisitor extends PlayScriptBaseVisitor<Object>{
+  ...
+}
+```
+
+这样，在 visitExpression() 方法中，我们可以编写各种表达式求值的代码，比如，加法和减法运算的代码如下：
+
+```java
+public Object visitExpression(ExpressionContext ctx) {
+        Object rtn = null;
+        // 二元表达式
+        if (ctx.bop != null && ctx.expression().size() >= 2) {
+            Object left = visitExpression(ctx.expression(0));
+            Object right = visitExpression(ctx.expression(1));
+            ...
+            Type type = cr.node2Type.get(ctx);// 数据类型是语义分析的成果
+
+            switch (ctx.bop.getType()) {
+            case PlayScriptParser.ADD:        // 加法运算
+                rtn = add(leftObject, rightObject, type);
+                break;
+            case PlayScriptParser.SUB:        // 减法运算
+                rtn = minus(leftObject, rightObject, type);
+                break;
+            ...
+            }
+        }
+        ...
+}
+```
+
+其中 ExpressionContext 就是 AST 中表达式的节点，叫做 Context，意思是你能从中取出这个节点所有的上下文信息，包括父节点、子节点等。其中，每个子节点的名称跟语法中的名称是一致的，比如加减法语法规则是下面这样：
+
+```
+expression bop=('+'|'-') expression
+```
+
+那么我们可以用 ExpressionContext 的这些方法访问子节点：
+
+```java
+ctx.expression();     // 返回一个列表，里面有两个成员，分别是左右两边的子节点
+ctx.expression(0);    // 运算符左边的表达式，是另一个 ExpressionContext 对象
+ctx.expression(1);    // 云算法右边的表达式
+ctx.bop();            // 一个 Token 对象，其类型是 PlayScriptParser.ADD 或 SUB
+ctx.ADD();            // 访问 ADD 终结符，当做加法运算的时候，该方法返回非空值
+ctx.MINUS()；         // 访问 MINUS 终结符
+```
+
+在做加法运算的时候我们还可以递归的对下级节点求值，就像代码里的 visitExpression(ctx.expression(0))。同样，要想运行整个脚本，我们只需要 visit 根节点就行了。
+
+所以，我们可以用这样的方式，为每个 AST 节点实现一个 visit 方法。从而把整个解释器升级一遍。除了实现表达式求值，我们还可以为今天设计的 if 语句、for 语句来编写求值逻辑。以 for 语句为例，代码如下：
+
+```java
+// 初始化部分执行一次
+if (forControl.forInit() != null) {
+    rtn = visitForInit(forControl.forInit());
+}
+
+while (true) {
+    Boolean condition = true; // 如果没有条件判断部分，意味着一直循环
+    if (forControl.expression() != null) {
+        condition = (Boolean) visitExpression(forControl.expression());
+    }
+
+    if (condition) {
+        // 执行 for 的语句体
+        rtn = visitStatement(ctx.statement(0));
+
+        // 执行 forUpdate，通常是“i++”这样的语句。这个执行顺序不能出错。
+        if (forControl.forUpdate != null) {
+            visitExpressionList(forControl.forUpdate);
+        }
+    } else {
+        break;
+    }
+}
+```
+
+你需要注意 for 语句中各个部分的执行规则，比如：
+
+- forInit 部分只能执行一次；
+- 每次循环都要执行一次 forControl，看看是否继续循环；
+- 接着执行 for 语句中的语句体；
+- 最后执行 forUpdate 部分，通常是一些“i++”这样的语句。
+
+## 总结
+
+今天，我带你用 Antlr 高效地完成了很多语法分析工作，比如完善表达式体系，完善语句体系。除此之外，我们还升级了脚本解释器，使它能够执行更多的表达式和语句。
+
+在实际工作中，针对面临的具体问题，我们完全可以像今天这样迅速地建立可以运行的代码，专注于解决领域问题，快速发挥编译技术的威力。
+
+而且在使用工具时，针对工具的某个特性，比如对优先级和结合性的支持，我们大致能够猜到工具内部的实现机制，因为我们已经了解了相关原理。
