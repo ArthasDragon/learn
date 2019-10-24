@@ -3352,3 +3352,97 @@ OpenFlow 是 SDN 控制器和网络设备之间互通的南向接口协议，Ope
 
 ![chapter25-2](./imgs/chapter25-2.png)
 
+SDN 控制器是如何通过 OpenFlow 协议控制网络的呢？
+
+![chapter25-3](./imgs/chapter25-3.png)
+
+在 OpenvSwitch 里面，有一个流表规则，任何通过这个交换机的包，都会经过这些规则进行处理，从而接收、转发、放弃。
+
+那流表长啥样呢？其实就是一个个表格，每个表格好多行，每行都是一条规则。每条规则都有优先级，先看高优先级的规则，再看低优先级的规则。
+
+![chapter25-4](./imgs/chapter25-4.png)
+
+对于每一条规则，要看是否满足匹配条件。这些条件包括，从哪个端口进来的，网络包头里面有什么等等。满足了条件的网络包，就要执行一个动作，对这个网络包进行处理。可以修改包头里的内容，可以跳到任何一个表格，可以转发到某个网口出去，也可以丢弃。
+
+通过这些表格，可以对收到的网络包随意处理。
+
+![chapter25-5](./imgs/chapter25-5.png)
+
+具体都能做什么处理呢？通过上面的表格可以看出，简直是想怎么处理怎么处理，可以覆盖 TCP/IP 协议栈的四层。
+
+对于物理层：
+
+- 匹配规则包括由从哪个口进来；
+- 执行动作包括从哪个口出去。
+
+对于 MAC 层：
+
+- 匹配规则包括：源 MAC 地址是多少？（dl_src），目标 MAC 是多少？（dl_dst），所属 vlan 是多少？（dl_vlan）；
+- 执行动作包括：修改源 MAC（mod_dl_src），修改目标 MAC（mod_dl_dst），修改 VLAN（mod_vlan_vid），删除 VLAN（strip_vlan），MAC 地址学习（learn）。
+
+对于网络层：
+
+- 匹配规则包括：源 IP 地址是多少？(nw_src)，目标 IP 是多少？（nw_dst）。
+- 执行动作包括：修改源 IP 地址（mod_nw_src），修改目标 IP 地址（mod_nw_dst）。
+
+对于传输层：
+
+- 匹配规则包括：源端口是多少？（tp_src），目标端口是多少？（tp_dst）。
+- 执行动作包括：修改源端口（mod_tp_src），修改目标端口（mod_tp_dst）。
+
+总而言之，对于 OpenvSwitch 来讲，网络包到了我手里，就是一个 Buffer，我想怎么改怎么改，想发到哪个端口就发送到哪个端口。
+
+OpenvSwitch 有本地的命令行可以进行配置，能够实验咱们前面讲过的一些功能。我们可以通过 OpenvSwitch 的命令创建一个虚拟交换机。然后可以将多个虚拟端口 port 添加到这个虚拟交换机上。
+
+```s
+ovs-vsctl add-br ubuntu_br
+```
+
+## 实验一：用 OpenvSwitch 实现 VLAN 的功能
+
+下面我们实验一下通过 OpenvSwitch 实现 VLAN 的功能，在 OpenvSwitch 中端口 port 分两种。
+
+第一类是 access port：
+
+- 这个端口配置 tag，从这个端口进来的包会被打上这个 tag；
+- 如果网络包本身带有的 VLAN ID 等于 tag，则会从这个 port 发出；
+- 从 access port 发出的包不带 VLAN ID。
+
+第二类是 trunk port：
+
+- 这个 port 不配置 tag，配置 trunks；
+- 如果 trunks 为空，则所有的 VLAN 都 trunk，也就意味着对于所有 VLAN 的包，本身带什么 VLAN ID，就是携带者什么 VLAN ID，如果没有设置 VLAN，就属于 VLAN 0，全部允许通过；
+- 如果 trunks 不为空，则仅仅带着这些 VLAN ID 的包通过。
+
+我们通过以下命令创建如下的环境：
+
+```py
+ovs-vsctl add-port ubuntu_br first_br
+ovs-vsctl add-port ubuntu_br second_br
+ovs-vsctl add-port ubuntu_br third_br
+ovs-vsctl set Port vnet0 tag=101
+ovs-vsctl set Port vnet1 tag=102
+ovs-vsctl set Port vnet2 tag=103
+ovs-vsctl set Port first_br tag=103
+ovs-vsctl clear Port second_br tag
+ovs-vsctl set Port third_br trunks=101,102
+```
+
+另外要配置禁止 MAC 地址学习。
+
+```py
+ovs-vsctl set bridge ubuntu_br flood-vlans=101,102,103
+```
+
+![chapter25-5](./imgs/chapter25-5.png)
+
+创建好了环境以后，我们来做这个实验。
+
+1. 从 192.168.100.102 来 ping 192.168.100.103，然后用 tcpdump 进行抓包。first_if 收到包了，从 first_br 出来的包头是没有 VLAN ID 的。second_if 也收到包了，由于 second_br 是 trunk port，因而出来的包头是有 VLAN ID 的，third_if 收不到包。
+2. 从 192.168.100.100 来 ping 192.168.100.105, 则 second_if 和 third_if 可以收到包，当然 ping 不通，因为 third_if 不属于某个 VLAN。first_if 是收不到包的。second_if 能够收到包，而且包头里面是 VLAN ID=101。third_if 也能收到包，而且包头里面是 VLAN ID=101。
+3. 从 192.168.100.101 来 ping 192.168.100.104， 则 second_if 和 third_if 可以收到包。first_if 是收不到包的。second_br 能够收到包，而且包头里面是 VLAN ID=102。third_if 也能收到包，而且包头里面是 VLAN ID=102。
+
+通过这个例子，我们可以看到，通过 OpenvSwitch，不用买一个支持 VLAN 的交换机，你也能学习 VLAN 的工作模式了。
+
+## 实验二：用 OpenvSwitch 模拟网卡绑定，连接交换机
+
