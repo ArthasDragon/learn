@@ -3434,7 +3434,7 @@ ovs-vsctl set Port third_br trunks=101,102
 ovs-vsctl set bridge ubuntu_br flood-vlans=101,102,103
 ```
 
-![chapter25-5](./imgs/chapter25-5.png)
+![chapter25-6](./imgs/chapter25-6.png)
 
 创建好了环境以后，我们来做这个实验。
 
@@ -3445,4 +3445,93 @@ ovs-vsctl set bridge ubuntu_br flood-vlans=101,102,103
 通过这个例子，我们可以看到，通过 OpenvSwitch，不用买一个支持 VLAN 的交换机，你也能学习 VLAN 的工作模式了。
 
 ## 实验二：用 OpenvSwitch 模拟网卡绑定，连接交换机
+
+接下来，我们来做另一个实验。在前面，我们还说过，为了高可用，可以使用网卡绑定，连接到交换机，OpenvSwitch 也可以模拟这一点。
+
+在 OpenvSwitch 里面，有个 bond_mode，可以设置为以下三个值：
+
+- active-backup：一个连接是 active，其他的是 backup，当 active 失效的时候，backup 顶上；
+- balance-slb：流量安装源 MAC 和 output VLAN 进行负载均衡；
+- balance-tcp：必须在支持 LACP 协议的情况下才可以，可根据 L2, L3, L4 进行负载均衡。
+
+我们搭建一个测试环境。
+
+![chapter25-7](./imgs/chapter25-7.png)
+
+默认情况下 bond_mode 是 active-backup 模式，一开始 active 的是 first_br 和 first_if。
+
+这个时候我们从 192.168.100.100 ping 192.168.100.102，以及从 192.168.100.101 ping 192.168.100.103 的时候，tcpdump 可以看到所有的包都是从 first_if 通过。
+
+如果把 first_if 设成 down，则包的走向会变，发现 second_if 开始有流量，对于 192.168.100.100 和 192.168.100.101 似乎没有收到影响。
+
+如果我们通过以下命令，把 bond_mode 设为 balance-slb。然后我们同时在 192.168.100.100 ping 192.168.100.102，在 192.168.100.101 ping 192.168.100.103，我们通过 tcpdump 发现包已经被分流了。
+
+```py
+ovs-vsctl set Port bond0 bond_mode=balance-slb
+ovs-vsctl set Port bond1 bond_mode=balance-slb
+```
+
+通过这个例子，我们可以看到，通过 OpenvSwitch，你不用买两台支持 bond 的交换机，也能看到 bond 的效果。
+
+那 OpenvSwitch 是怎么做到这些的呢？我们来看 OpenvSwitch 的架构图。
+
+![chapter25-8](./imgs/chapter25-8.png)
+
+OpenvSwitch 包含很多的模块，在用户态有两个重要的进程，也有两个重要的命令行工具。
+
+- 第一个进程是 OVSDB 进程。ovs-vsctl 命令行会和这个进程通信，去创建虚拟交换机，创建端口，将端口添加到虚拟交换机上，OVSDB 会将这些拓扑信息保存在一个本地的文件中。
+- 第一个进程是 vswitchd 进程。ovs-ofctl 命令行会和这个进程通信，去下发流表规则，规则里面会规定如何对网络包进行处理，vswitchd 会将流表放在用户态 Flow Table 中。
+
+在内核态，OpenvSwitch 有内核模块 OpenvSwitch.ko，对应图中的 Datapath 部分。在网卡上注册一个函数，每当有网络包到达网卡的时候，这个函数就会被调用。
+
+在内核的这个函数里面，会拿到网络包，将各个层次的重要信息拿出来，例如：
+
+- 在物理层，in_port 即包进入的网口的 ID；
+- 在 MAC 层，源和目的 MAC 地址；
+- 在 IP 层，源和目的 IP 地址；
+- 在传输层，源和目的端口号。
+
+在内核中，有一个内核态 Flow Table。接下来内核模块在这个内核流表中匹配规则，如果匹配上了，则执行操作、修改包，或者转发或者放弃。如果内核没有匹配上，则需要进入用户态，用户态和内核态之间通过 Linux 的一个机制 Netlink 相互通信。
+
+内核通过 upcall，告知用户态进程 vswitchd 在用户态 Flow Table 里面去匹配规则，这里面的规则是全量的流表规则，而内核 Flow Table 里面的只是为了快速处理，保留了部分规则，内核里面的规则过一阵就会过期。
+
+当在用户态匹配到了流表规则之后，就在用户态执行操作，同时将这个匹配成功的流表通过 reinject 下发到内核，从而接下来的包都能在内核找到这个规则。
+
+这里调用 openflow 协议的，是本地的命令行工具，也可以是远程的 SDN 控制器，一个重要的 SDN 控制器是 OpenDaylight。
+
+下面这个图就是 OpenDaylight 中看到的拓扑图。是不是有种物业管理员在监控室里的感觉？
+
+![chapter25-9](./imgs/chapter25-9.png)
+
+我们可以通过在 OpenDaylight 里，将两个交换机之间配置通，也可以配置不通，还可以配置一个虚拟 IP 地址 VIP，在不同的机器之间实现负载均衡等等，所有的策略都可以灵活配置。
+
+## 如何在云计算中使用 OpenvSwitch？
+
+OpenvSwitch 这么牛，如何用在云计算中呢？
+
+![chapter25-10](./imgs/chapter25-10.png)
+
+我们还是讨论 VLAN 的场景。
+
+在没有 OpenvSwitch 的时候，如果一个新的用户要使用一个新的 VLAN，还需要创建一个属于新的 VLAN 的虚拟网卡，并且为这个租户创建一个单独的虚拟网桥，这样用户越来越多的时候，虚拟网卡和虚拟网桥会越来越多，管理非常复杂。
+
+另一个问题是虚拟机的 VLAN 和物理环境的 VLAN 是透传的，也即从一开始规划的时候，就需要匹配起来，将物理环境和虚拟环境强绑定，本来就不灵活。
+
+而引入了 OpenvSwitch，状态就得到了改观。
+
+首先，由于 OpenvSwitch 本身就是支持 VLAN 的，所有的虚拟机都可以放在一个网桥 br0 上，通过不同的用户配置不同的 tag，就能够实现隔离。例如上面的图，用户 A 的虚拟机都在 br0 上，用户 B 的虚拟机都在 br1 上，有了 OpenvSwitch，就可以都放在 br0 上，只是设置了不同的 tag。
+
+另外，还可以创建一个虚拟交换机 br1，将物理网络和虚拟网络进行隔离。物理网络有物理网络的 VLAN 规划，虚拟机在一台物理机上，所有的 VLAN 都是从 1 开始的。由于一台机器上的虚拟机不会超过 4096 个，所以 VLAN 在一台物理机上如果从 1 开始，肯定够用了。
+
+例如在图中，上面的物理机里面，用户 A 被分配的 tag 是 1，用户 B 被分配的 tag 是 2，而在下面的物理机里面，用户 A 被分配的 tag 是 7，用户 B 被分配的 tag 是 6。
+
+如果物理机之间的通信和隔离还是通过 VLAN 的话，需要将虚拟机的 VLAN 和物理环境的 VLAN 对应起来，但为了灵活性，不一定一致，这样可以实现分别管理物理机的网络和虚拟机的网络。好在 OpenvSwitch 可以对包的内容进行修改。例如通过匹配 dl_vlan，然后执行 mod_vlan_vid 来改进进出出物理机的网络包。
+
+尽管租户多了，物理环境的 VLAN 还是不够用，但是有了 OpenvSwitch 的映射，将物理和虚拟解耦，从而可以让物理环境使用其他技术，而不影响虚拟机环境，这个我们后面再讲。
+
+## 总结
+
+- 用 SDN 控制整个云里面的网络，就像小区保安从总控室管理整个物业是一样的，将控制面和数据面进行了分离；
+- 一种开源的虚拟交换机的实现 OpenvSwitch，它能对经过自己的包做任意修改，从而使得云对网络的控制十分灵活；
+- 将 OpenvSwitch 引入了云之后，可以使得配置简单而灵活，并且可以解耦物理网络和虚拟网络。
 
