@@ -11,3 +11,5 @@
 [编译原理之美](https://github.com/ArthasDragon/learn/tree/master/learning_space/%E7%BC%96%E8%AF%91%E5%8E%9F%E7%90%86%E4%B9%8B%E7%BE%8E)
 
 [趣谈网络协议](https://github.com/ArthasDragon/learn/blob/master/learning_space/%E8%B6%A3%E8%B0%88%E7%BD%91%E7%BB%9C%E5%8D%8F%E8%AE%AE/readme.md)
+
+[深入浅出计算机组成原理](https://github.com/ArthasDragon/learn/tree/master/learning_space/%E6%B7%B1%E5%85%A5%E6%B5%85%E5%87%BA%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BB%84%E6%88%90%E5%8E%9F%E7%90%86)
