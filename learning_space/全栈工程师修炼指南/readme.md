@@ -56,5 +56,115 @@ HTTP 1.0 版本就稳定而成熟了，也是如今浏览器广泛支持的最�
 
 ## HTTP，SSL/TLS 和 HTTPS
 
+在一开始的时候，HTTP 的设计者并没有把专门的加密安全传输放进协议设计里面。因此单独使用 HTTP 进行明文的数据传输，一定存在着许多的安全问题。比方说，现在有一份数据需要使用 HTTP 协议从客户端 A 发送到服务端 B，而第三方 C 尝试来做点坏事，于是就可能产生如下四大类安全问题：
+
+- Interception：拦截。传输的消息可以被中间人 C 截获，并泄露数据。
+
+- Spoofing：伪装。A 和 B 都可能被 C 冒名顶替，因此消息传输变成了 C 发送到 B，或者 A 发送到 C。
+
+- Falsification：篡改。C 改写了传输的消息，因此 B 收到了一条被篡改的消息而不知情。
+
+- Repudiation：否认。这一类没有 C 什么事，而是由于 A 或 B 不安好心。A 把消息成功发送了，但之后 A 否认这件事发生过；或者 B 其实收到了消息，但是否认他收到过。
+
+但是，与其重新设计一套安全传输方案，倒不如发挥一点拿来主义的精神，把已有的和成熟的安全协议直接拿过来套用，最好它位于呈现层（Presentation Layer），因此正好加塞在 HTTP 所在的应用层（Application Layer）下面，**这样这个过程对于 HTTP 本身透明，也不影响原本 HTTP 以下的协议（例如 TCP）**。
+
+这个协议就是 SSL/TLS，它使得上面四大问题中，和传输本身密切相关的前三大问题都可以得到解决（第四个问题还需要引入数字签名来解决）。于是，HTTP 摇身一变成了 HTTPS：
+
+> HTTP + SSL/TLS = HTTPS
+
+SSL 指的是 Secure Socket Layer，而 TLS 指的是 Transport Layer Security，事实上，一开始只有 SSL，但是在 3.0 版本之后，SSL 被标准化并通过 RFC 2246 以 SSL 为基础建立了 TLS 的第一个版本，因此可以简单地认为 SSL 和 TLS 是具备父子衍生关系的同一类安全协议。
+
+## 动手捕获 TLS 报文
+
+命令行执行抓包命令，指明要抓 https://www.google.com 的包（当然，你也可以使用其他 HTTPS 网站地址），注意 HTTPS 的默认端口是 443（-i 指定的 interface 可能因为不同的操作系统有所区别，在我的 Mac 上是 en0）
+
+```java
+sudo tcpdump -i en0 -v 'host www.google.com and port 443' -w https.cap
+```
+
+再新建一个命令行窗口，使用 curl 命令来访问 Google 主页：
+
+```java
+curl https://www.google.com
+```
+
+于是在看到类似如下抓包后 CTRL + C 停止：
+
+```java
+tcpdump: listening on en0, link-type EN10MB (Ethernet), capture size 262144 bytes
+^C49 packets captured
+719 packets received by filter
+0 packets dropped by kernel
+```
+
+接着使用 Wireshark 打开刚才抓的 https.cap，在 filter 中输入 tls，得到如下请求和响应报文：
+
+![chapter2-1](./imgs/chapter2-1.jpg)
+
+可以看到，这里有五个重要的握手消息，在它们之后的所有消息都是用于承载实际数据的“Application Data”了。握手的过程略复杂，接下来我会尽可能用通俗的语言把最主要的流程讲清楚。
+
+## 对称性和非对称性加密
+
+对称性加密（Symmetric Cryptography），指的是加密和解密使用相同的密钥。这种方式相对简单，加密解密速度快，但是由于加密和解密需要使用相同的密钥，如何安全地传递密钥，往往成为一个难题。
+
+非对称性加密（Asymmetric Cryptography），指的是数据加密和解密需要使用不同的密钥。通常一个被称为公钥（Public Key），另一个被称为私钥（Private Key），二者一般同时生成，但是**公钥往往可以公开和传播，而私钥不能。经过公钥加密的数据，需要用私钥才能解密；**反之亦然。这种方法较为复杂，且性能较差，好处就是由于加密和解密的密钥具有相对独立性，公钥可以放心地传播出去，不用担心安全性问题
+
+> 原始数据 + 公钥 → 加密数据
+> 加密数据 + 私钥 → 原始数据
+
+## TLS 连接建立原理
+
+![chapter2-2](./imgs/chapter2-2.jpeg)
+
+**Step 1: Client Hello.** 客户端很有礼貌，先向服务端打了个招呼，并携带以下信息：
+
+- 客户端产生的随机数 A；
+
+- 客户端支持的加密方法列表。
+
+**Step 2: Server Hello.**服务端也很有礼貌，向客户端回了个招呼：
+
+- 服务端产生的随机数 B；
+
+- 服务端根据客户端的支持情况确定出的加密方法组合（Cipher Suite）。
+
+**Step 3: Certificate, Server Key Exchange, Server Hello Done.** 服务端在招呼之后也紧跟着告知：
+
+- Certificate，证书信息，证书包含了服务端生成的公钥。
+
+客户端收到消息后，验证确认证书真实有效，那么这个证书里面的公钥也就是可信的了.
+
+接着客户端再生成一个随机数 C（Pre-master Secret），于是现在共有随机数 A、B 和 C，根据约好的加密方法组合，三者可生成新的密钥 X（Master Secret），而由 X 可继续生成真正用于后续数据进行加密和解密的对称密钥。因为它是在本次 TLS 会话中生成的，所以也被称为会话密钥（Session Secret）。简言之：
+
+> 客户端随机数 A + 服务端随机数 B + 客户端 Pre-master Secret C → 会话密钥
+
+需要注意的是，实际这个 Pre-master Secret 的生成方法不是固定的，而会根据加密的具体算法不同而不同：
+
+- 上述我介绍的是传统 RSA 方式，即 Pre-master Secret 由客户端独立生成，加密后再通过 Client Key Exchange 发回服务端。
+
+- 还有一种是 ECDHE 方式，这种方式下无论在客户端还是服务端，Pre-master Secret 需要通过 Client Key Exchange 和 Server Key Exchange 两者承载的参数联合生成。
+
+**Step 4: Client Key Exchange, Change Cipher Spec, Encrypted Handshake Message.** 接着客户端告诉服务端：
+
+- Client Key Exchange，本质上它就是上面说的这个 C，但使用了服务端通过证书发来的公钥加密；
+
+- Change Cipher Spec，客户端同意正式启用约好的加密方法和密钥了，后面的数据传输全部都使用密钥 X 来加密；
+
+- Encrypted Handshake Message，快速验证：这是客户端对于整个对话进行摘要并加密得到的串，如果经过服务端解密，和原串相等，就证明整个握手过程是成功的。
+
+服务端收到消息后，用自己私钥解密上面的 Client Key Exchange，得到了 C，这样它和客户端一样，也得到了 A、B 和 C，继而到 X，以及最终的会话密钥。
+
+于是，客户端和服务端都得到了能够加密解密传输数据的对称密钥——会话密钥。
+
+因此，我们可以看到：**TLS 是通过非对称加密技术来保证握手过程中的可靠性（公钥加密，私钥解密），再通过对称加密技术来保证数据传输过程中的可靠性的。**
+
+这种通过较严格、较复杂的方式建立起消息交换渠道，再通过相对简单且性能更高的方式来实际完成主体的数据传输，并且前者具有长效性（即公钥和私钥相对稳定），后者具有一过性（密钥是临时生成的），这样的模式，我们还将在全栈的知识体系中，继续见到。
+
+**Step 5: Change Cipher Spec, Encrypted Handshake Message.** 服务端最后也告知客户端
+
+- Change Cipher Spec，服务端也同意要正式启用约好的加密方法和密钥，后面的数据传输全部都使用 X 来加密。
+
+- Encrypted Handshake Message，快速验证：这是服务端对于整个对话进行摘要并加密得到的串，如果经过客户端解密，和原串相等，就证明整个握手过程是成功的。
+
 
 
