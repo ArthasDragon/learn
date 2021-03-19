@@ -4415,5 +4415,7 @@ Crawl-delay: 5
 https://www.google-analytics.com/collect?v=1&_v=j79&a=775923213&t=pageview&_s=1&dl=https%3A%2F%2Ftime.geekbang.org%2F&ul=en-us&de=UTF-8&dt=%E6%9E%81%E5%AE%A2%E6%97%B6%E9%97%B4&sd=24-bit&sr=1440x900&vp=575x729&je=0&_u=AACAAEAB~&jid=&gjid=&cid=248548954.1568164577&tid=UA-103082599-6&_gid=817127427.1571674409&z=266312543
 ```
 
+通过收集这样的信息，可以获得很多网站用户的情况统计，比如访问量、页面停留时间、地区分布、电脑访问或手机访问的比例等等，并能观察这样的统计信息基于时间的走势。
+
 
 
